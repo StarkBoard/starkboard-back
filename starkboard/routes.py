@@ -24,12 +24,12 @@ def get_transactions_in_block():
 #######################
 #    User Routes      #
 #######################
-@app.route('/getCountWalletDeployed', methods=['GET'])
+@app.route('/getDailyCountWalletDeployed', methods=['GET'])
 def get_count_wallet_deployed():
     """
     Retrieve the daily number of Wallets deployed (ArgentX or Braavos or All)
     """
-    wallet_type = request.args.get('walletType')
+    wallet_type = request.args.get('walletType', 'All')
     return count_wallet_deployed(wallet_type)
 
 
