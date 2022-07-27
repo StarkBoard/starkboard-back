@@ -1,5 +1,8 @@
 import requests
 import json
+import os
+from datetime import datetime, time, timedelta
+
 
 class Requester:
     def __init__(self, base_url, **kwargs):
@@ -27,7 +30,10 @@ class Requester:
         return self.session.get(self.base_url+url, **kwargs)
 
     def post(self, url, method, params, **kwargs):
-        data = self.get_request_data(method, params)
+        if url == os.environ.get("STARKNET_NODE_URL"):
+            data = self.get_request_data(method, params)
+        else:
+            data = json.dumps(params)
         return self.session.post(self.base_url+url, data=data, **kwargs)
 
     def put(self, url, **kwargs):
@@ -48,3 +54,12 @@ class Requester:
             else:
                 destination[key] = value
         return destination
+
+    def get_block_from_timestamp(self, timestamp):
+        timestamp_data = {
+            "operationName": "block_from_timestamp",
+            "query": "query block_from_timestamp {block(where: {timestamp: {_gte: "+str(datetime.timestamp(timestamp) - 500)+", _lte: "+str(datetime.timestamp(timestamp) + 500)+"}}) {block_number, timestamp}}"
+        }
+        r = self.post("", method="", params=timestamp_data)    
+        available_blocks = json.loads(r.text)["data"]["block"]    
+        return available_blocks[len(available_blocks)//2]
