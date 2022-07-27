@@ -1,5 +1,7 @@
 from app import app
-from starkboard.transactions import get_transactions
+from starkboard.transactions import transactions_in_block
+from starkboard.fees import estimate_fees
+
 
 @app.route('/', methods=['GET'])
 def landing():
@@ -9,6 +11,21 @@ def landing():
 # Transactions Routes #
 #######################
 
-@app.route('/tx', methods=['GET'])
-def transactions():
-    return get_transactions()
+@app.route('/getTxInBlock', methods=['GET'])
+def get_transactions_in_block():
+    """
+    Retrieve the list of transactions hash from a given block number
+    """
+    return transactions_in_block()
+
+
+#######################
+#    Fees Routes      #
+#######################
+
+@app.route('/estimateFee', methods=['GET'])
+def get_estimate_fees():
+    """
+    Fees Estimation on the network
+    """
+    return estimate_fees()

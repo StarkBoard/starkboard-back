@@ -1,3 +1,4 @@
 starkboard-env/*
 __pycache__/*
 starkboard/__pycache__/*
+.env

@@ -1,4 +1,5 @@
 import requests
+import json
 
 class Requester:
     def __init__(self, base_url, **kwargs):
@@ -8,6 +9,13 @@ class Requester:
             if isinstance(kwargs[arg], dict):
                 kwargs[arg] = self.__deep_merge(getattr(self.session, arg), kwargs[arg])
             setattr(self.session, arg, kwargs[arg])
+        self.base_request_data = {"jsonrpc":"2.0", "id":1, "method":"", "params":[]}
+        
+    def get_request_data(self, method, params):
+        request_data = self.base_request_data
+        request_data["method"] = method
+        request_data["params"] = params
+        return json.dumps(request_data)
 
     def request(self, method, url, **kwargs):
         return self.session.request(method, self.base_url+url, **kwargs)
@@ -18,8 +26,9 @@ class Requester:
     def get(self, url, **kwargs):
         return self.session.get(self.base_url+url, **kwargs)
 
-    def post(self, url, **kwargs):
-        return self.session.post(self.base_url+url, **kwargs)
+    def post(self, url, method, params, **kwargs):
+        data = self.get_request_data(method, params)
+        return self.session.post(self.base_url+url, data=data, **kwargs)
 
     def put(self, url, **kwargs):
         return self.session.put(self.base_url+url, **kwargs)
