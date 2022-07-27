@@ -4,7 +4,7 @@ from flask import request
 from starkboard.transactions import transactions_in_block
 from starkboard.fees import estimate_fees
 from starkboard.user import count_wallet_deployed
-from starkboard.contracts import count_contract_deployed, most_used_functions_from_contract
+from starkboard.contracts import count_contract_deployed_current_block, most_used_functions_from_contract
 
 @app.route('/', methods=['GET'])
 def landing():
@@ -36,12 +36,12 @@ def get_count_wallet_deployed():
 #######################
 #  Contracts Routes   #
 #######################
-@app.route('/getCountContractsDeployed', methods=['GET'])
-def get_count_contrats_deployed():
+@app.route('/getCurrentBlockCountContractsDeployed', methods=['GET'])
+def get_count_contrats_deployed_current_block():
     """
-    Retrieve the daily number of Contract deployed on StarkNet
+    Retrieve the number of Contract deployed on StarkNet on the latest block
     """
-    return count_contract_deployed()
+    return count_contract_deployed_current_block()
 
 @app.route('/getMostUsedFunctionFromContract', methods=['GET'])
 def get_most_used_functions_from_contract():

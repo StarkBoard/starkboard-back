@@ -8,7 +8,7 @@ staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-
 starknet_gateway = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL"), headers={"Content-Type": "application/json"})
 
 
-def count_contract_deployed():
+def count_contract_deployed_current_block():
     """
     Retrieve the number of deployed contracts on StarkNet
     @TODO
