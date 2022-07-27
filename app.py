@@ -14,8 +14,8 @@ env_config = os.getenv("APP_SETTINGS", "config.DevelopmentConfig")
 app.config.from_object(env_config)
 
 starknet_indexer = Requester(os.environ.get("STARKNET_INDEXER_URL"), headers={"Content-Type": "application/json"})
-yesterday_block = starknet_indexer.get_block_from_timestamp(yesterday_midnight)
-today_block = starknet_indexer.get_block_from_timestamp(midnight)
+#yesterday_block = starknet_indexer.get_block_from_timestamp(yesterday_midnight)
+#today_block = starknet_indexer.get_block_from_timestamp(midnight)
 
 
 def get_yesterday_block():

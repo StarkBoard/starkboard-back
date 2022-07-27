@@ -29,8 +29,8 @@ class Requester:
     def get(self, url, **kwargs):
         return self.session.get(self.base_url+url, **kwargs)
 
-    def post(self, url, method, params, **kwargs):
-        if url == os.environ.get("STARKNET_NODE_URL"):
+    def post(self, url, method=None, params=None, **kwargs):
+        if self.base_url == os.environ.get("STARKNET_NODE_URL"):
             data = self.get_request_data(method, params)
         else:
             data = json.dumps(params)
