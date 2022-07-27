@@ -13,6 +13,7 @@ def transactions_in_block(block_id="latest"):
     return data["result"]
 
 
+#@TODO
 def get_transactions_in_block2(block_id="latest"):
     """
     Retrieve the list of transactions hash from a given block number

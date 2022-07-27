@@ -1,7 +1,9 @@
 from app import app
+from flask import request
 from starkboard.transactions import transactions_in_block
 from starkboard.fees import estimate_fees
-
+from starkboard.user import count_wallet_deployed
+from starkboard.contracts import count_contract_deployed
 
 @app.route('/', methods=['GET'])
 def landing():
@@ -17,6 +19,32 @@ def get_transactions_in_block():
     Retrieve the list of transactions hash from a given block number
     """
     return transactions_in_block()
+
+
+#######################
+#    User Routes      #
+#######################
+
+@app.route('/getCountWalletDeployed', methods=['GET'])
+def get_count_wallet_deployed():
+    """
+    Retrieve the number of Wallets deployed (ArgentX or Braavos)
+    """
+    wallet_type = request.args.get('walletType')
+    return count_wallet_deployed(wallet_type)
+
+
+#######################
+#  Contracts Routes   #
+#######################
+
+@app.route('/getCountContractsDeployed', methods=['GET'])
+def get_count_contrats_deployed():
+    """
+    Retrieve the number of Contract deployed on StarkNet
+    """
+    return count_contract_deployed()
+
 
 
 #######################
