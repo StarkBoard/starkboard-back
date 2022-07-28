@@ -2,6 +2,7 @@ import os
 import json
 from app import get_yesterday_block
 from starkboard.utils import Requester
+from datetime import datetime, time, timedelta
 
 staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
 
@@ -37,7 +38,9 @@ def count_wallet_deployed(wallet_type="All"):
         data = json.loads(r.text)["result"]
         count_wallet += len(data["events"])
 
-
+    today = datetime.now()
+    last_day = today - timedelta(days=1)
     return {
+        "day": last_day.strftime("%m/%d/%Y"),
         "deployedWallets": count_wallet
     }

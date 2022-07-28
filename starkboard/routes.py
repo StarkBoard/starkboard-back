@@ -1,7 +1,7 @@
 from imaplib import _Authenticator
 from app import app
 from flask import request
-from starkboard.transactions import transactions_in_block
+from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block
 from starkboard.fees import estimate_fees
 from starkboard.user import count_wallet_deployed
 from starkboard.contracts import count_contract_deployed_current_block, most_used_functions_from_contract
@@ -19,6 +19,14 @@ def get_transactions_in_block():
     Retrieve the list of transactions hash from a given block number
     """
     return transactions_in_block()
+
+
+@app.route('/getDailyCountTransfer', methods=['GET'])
+def get_daily_count_transfer():
+    """
+    Retrieve the daily number of tranfer transactions type
+    """
+    return get_transfer_transactions_in_block()
 
 
 #######################
