@@ -1,6 +1,5 @@
 import os
 import json
-from app import get_yesterday_block
 from starkboard.utils import Requester
 
 staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
@@ -22,13 +21,25 @@ def count_contract_deployed_current_block():
     }
 
 
+def count_contract_deployed_int_block(block):
+    """
+    Retrieve the number of deployed contracts on StarkNet
+    @TODO
+    """
+    transactions = json.loads(starknet_gateway.get(f"get_block?blockNumber={block}").text)
+    deploy_tx = [tx for tx in transactions["transactions"] if tx["type"] == "DEPLOY"]
+    return {
+        "count_deployed_contracts": len(deploy_tx)
+    }
+
+
 def most_used_functions_from_contract(contract_address):
     """
     Retrieve the number of deployed contracts on StarkNet
     @TODO
     """
 
-    fromBlock, toBlock = get_yesterday_block()
+
     
 
 

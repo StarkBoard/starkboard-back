@@ -1,6 +1,5 @@
 import os
 import json
-from app import get_yesterday_block
 from starkboard.utils import Requester
 from datetime import datetime, time, timedelta
 
@@ -20,18 +19,19 @@ def transactions_in_block(block_id="latest"):
     """
     r = staknet_node.post("", method="starknet_getBlockByNumber", params=[block_id])
     data = json.loads(r.text)
+    if 'error'in data:
+        return data['error']
     return data["result"]
 
 
-def get_transfer_transactions_in_block():
+def get_transfer_transactions_in_block(block):
     """
-    Retrieve the list of transactions hash from a given block number
+    Retrieve the list of transfer events in a given block
     """
-    fromBlock, toBlock = get_yesterday_block()
     params = {
         "filter": {
-            "fromBlock": fromBlock["block_number"], 
-            "toBlock": toBlock["block_number"], 
+            "fromBlock": block, 
+            "toBlock": block, 
             "page_size": 1000,
             "page_number": 0, 
             "keys": transfer_key
@@ -51,7 +51,6 @@ def get_transfer_transactions_in_block():
     today = datetime.now()
     last_day = today - timedelta(days=1)
     return {
-        "day": last_day.strftime("%m/%d/%Y"),
-        "transferCount": count_transfer
+        "count_transfer": count_transfer
     }
 
