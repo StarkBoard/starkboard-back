@@ -51,3 +51,40 @@ def get_transfer_transactions_in_block(block):
         "count_transfer": count_transfer
     }
 
+def get_transfer_transactions(fromBlock, toBlock):
+    """
+    Retrieve the list of transfer events in a given block
+    """
+    params = {
+        "filter": {
+            "fromBlock": fromBlock, 
+            "toBlock": toBlock, 
+            "page_size": 1000,
+            "page_number": 0, 
+            "keys": transfer_key
+        }
+    }
+
+    r = staknet_node.post("", method="starknet_getEvents", params=params)
+    data = json.loads(r.text)["result"]
+    results = {}
+    events = data["events"]
+    print(f'{len(events)} events fetched.')
+    for event in events:
+        if event["block_number"] not in results:
+            results[event["block_number"]] = 1
+        else:
+            results[event["block_number"]] += 1
+    while not data["is_last_page"]:
+        params["filter"]["page_number"] += 1
+        r = staknet_node.post("", method="starknet_getEvents", params=params)
+        data = json.loads(r.text)["result"]
+        events = data["events"]
+        print(f'{len(events)} events fetched.')
+        for event in events:
+            if event["block_number"] not in results:
+                results[event["block_number"]] = 1
+            else:
+                results[event["block_number"]] += 1
+        print("fetched another page...")
+    return results

@@ -1,15 +1,15 @@
 import os
 from dotenv import load_dotenv
 load_dotenv()
-from starkboard.utils import RepeatedTimer, StarkboardDatabase
-from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block
+from starkboard.utils import RepeatedTimer, StarkboardDatabase, chunks
+from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block, get_transfer_transactions
 from starkboard.user import count_wallet_deployed, get_wallet_address_deployed
 from starkboard.contracts import count_contract_deployed_int_block
 from starkboard.tokens import get_eth_total_supply, get_balance_of
 import signal
 import asyncio
 from datetime import datetime
-
+import time
 
 
 ######################################################################
@@ -27,16 +27,15 @@ def block_tx_fetcher(block_id):
 
     wallet_deployed = count_wallet_deployed(wallet_type="All", fromBlock=block_id, toBlock=block_id)
     contract_deployed = count_contract_deployed_int_block(block_id)
-    transfer_executed = get_transfer_transactions_in_block(block_id)
-
+    #transfer_executed = get_transfer_transactions_in_block(block_id)
     print("---")
     print(f'Fetched Block {current_block["block_number"]} at {datetime.fromtimestamp(current_block["accepted_time"])}')
     print(f'> {len(current_block["transactions"])} Txs found in block.')
     print(f'> {wallet_deployed["deployed_wallets"]} User Wallet created in block.')
     print(f'> {contract_deployed["count_deployed_contracts"]} Contract deployed in block.')
-    print(f'> {transfer_executed["count_transfer"]} Transfer executed in block.')
+    #print(f'> {transfer_executed["count_transfer"]} Transfer executed in block.')
 
-    return current_block, wallet_deployed, contract_deployed, transfer_executed, current_block["block_number"]
+    return current_block, wallet_deployed, contract_deployed, None, current_block["block_number"]
 
 
 def block_aggreg_fetcher(db):
@@ -54,7 +53,7 @@ def block_aggreg_fetcher(db):
         "count_txs": len(current_block["transactions"]),
         "count_new_wallets": wallet_deployed["deployed_wallets"],
         "count_new_contracts": contract_deployed["count_deployed_contracts"],
-        "count_transfers": transfer_executed["count_transfer"]
+        "count_transfers": 0
     }
     insert_res = db.insert_block_data(block_data)
     if insert_res:
@@ -64,6 +63,16 @@ def block_aggreg_fetcher(db):
         print("Error Inserting Block. Retrying")
     return True
 
+
+def update_transfer_count(db):
+    range_block = chunks(range(250100, 250500), 20)
+    for rg in range_block:
+        transfer_executed = get_transfer_transactions(rg[0], rg[-1])
+        print(transfer_executed)
+        for block_number, count_transfer in transfer_executed.items():
+            db.update_block_data(block_number, count_transfer)
+        time.sleep(3)
+        
 
 ######################################################################
 #    TVL, ERC20 & ETH data                                           #
@@ -109,6 +118,7 @@ signal.signal(signal.SIGINT, handler)
 
 if __name__ == '__main__':
     starkboard_db = StarkboardDatabase()
+    update_transfer_count(starkboard_db)
     #loop = asyncio.get_event_loop()
     #loop.run_until_complete(get_wallets_balance())
-    rt = RepeatedTimer(4, block_aggreg_fetcher, starkboard_db)
+    #rt = RepeatedTimer(0.5, block_aggreg_fetcher, starkboard_db)

@@ -138,6 +138,19 @@ class StarkboardDatabase():
             print(e)
             return False
 
+    def update_block_data(self, block_number, count_transfer):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """UPDATE block_data SET count_transfers=%s WHERE block_number=%s;"""
+            inserted_block = (count_transfer, block_number)
+            cursor.execute(sql_insert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
     def inserts_starkboard_og(self, data):
         try:
             cursor = self._connection.cursor()
@@ -166,3 +179,9 @@ class StarkboardDatabase():
         except Exception as e:
             print(e)
             return False
+
+
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
