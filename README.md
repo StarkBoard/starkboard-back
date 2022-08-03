@@ -18,7 +18,7 @@ CFLAGS=-I`brew --prefix gmp`/include LDFLAGS=-L`brew --prefix gmp`/lib pip insta
 
 - Fetching and archiving Transactions count for block 
 ```
-python fetcher.py -t True --fromBlock 254000 --toBlock 255000
+python fetcher.py -t True --fromBlock 260000 --toBlock 265000
 ```
 
 - Fetching and archiving Block data from block

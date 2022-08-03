@@ -4,6 +4,8 @@ from starkboard.utils import Requester
 from datetime import datetime, time, timedelta
 
 staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
+starknet_events = Requester("http://starknet.events/api/v1/get_events", headers={"Content-Type": "application/json"})
+
 
 ################################1
 #  Available Transactions Keys  #
@@ -80,6 +82,39 @@ def get_transfer_transactions(fromBlock, toBlock):
         r = staknet_node.post("", method="starknet_getEvents", params=params)
         data = json.loads(r.text)["result"]
         events = data["events"]
+        print(f'{len(events)} events fetched.')
+        for event in events:
+            if event["block_number"] not in results:
+                results[event["block_number"]] = 1
+            else:
+                results[event["block_number"]] += 1
+    return results
+
+
+
+def get_transfer_transactions_v2(fromBlock, toBlock):
+    """
+    Retrieve the list of transfer events in a given block
+    """
+    page_number = 1
+
+    query = f'?chain_id=testnet&from_block={fromBlock}&to_block={toBlock}&page={page_number}&size=100&key={transfer_key[0]}'
+    r = starknet_events.get(query)
+    data = json.loads(r.text)
+    results = {}
+    events = data["items"]
+    print(f'{len(events)} events fetched.')
+    for event in events:
+        if event["block_number"] not in results:
+            results[event["block_number"]] = 1
+        else:
+            results[event["block_number"]] += 1
+    while not len(events) != 100:
+        page_number += 1
+        query = f'?chain_id=testnet&from_block={fromBlock}&to_block={toBlock}&page={page_number}&size=100&key={transfer_key[0]}'
+        r = starknet_events.get(query)
+        data = json.loads(r.text)
+        events = data["items"]
         print(f'{len(events)} events fetched.')
         for event in events:
             if event["block_number"] not in results:

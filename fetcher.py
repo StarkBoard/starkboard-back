@@ -3,7 +3,7 @@ import argparse
 from dotenv import load_dotenv
 load_dotenv()
 from starkboard.utils import RepeatedTimer, StarkboardDatabase, chunks
-from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block, get_transfer_transactions
+from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block, get_transfer_transactions, get_transfer_transactions_v2
 from starkboard.user import count_wallet_deployed, get_wallet_address_deployed
 from starkboard.contracts import count_contract_deployed_int_block
 from starkboard.tokens import get_eth_total_supply, get_balance_of
@@ -76,12 +76,12 @@ def block_aggreg_fetcher(db):
 
 
 def update_transfer_count(db, fromBlock, toBlock):
-    range_block = chunks(range(fromBlock, toBlock), 20)
+    range_block = chunks(range(fromBlock, toBlock), 100)
     for rg in range_block:
         for attempt in range(10):
             try:
                 print(f'Fetching from block {rg[0]} to {rg[-1]}...')
-                transfer_executed = get_transfer_transactions(rg[0], rg[-1])
+                transfer_executed = get_transfer_transactions_v2(rg[0], rg[-1])
                 print(transfer_executed)
                 for block_number, count_transfer in transfer_executed.items():
                     db.update_block_data(block_number, count_transfer)

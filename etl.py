@@ -10,6 +10,8 @@ def get_block_data_by_date(db):
     for daily in daily_data:
         db.insert_daily_data(daily)
     
+
+    
     return None
 
 
