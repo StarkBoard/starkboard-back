@@ -86,5 +86,4 @@ def get_transfer_transactions(fromBlock, toBlock):
                 results[event["block_number"]] = 1
             else:
                 results[event["block_number"]] += 1
-        print("fetched another page...")
     return results

@@ -43,6 +43,9 @@ def block_aggreg_fetcher(db):
     print(f'Checking next block {last_checked_block + 1}')
     try:
         current_block, wallet_deployed, contract_deployed, transfer_executed, current_block_number = block_tx_fetcher(last_checked_block + 1)
+        if not current_block:
+            print("Connection timed out, retrying...")
+            return True
     except Exception as e:
         print("Connection timed out, retrying...")
         return True
