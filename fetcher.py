@@ -1,4 +1,5 @@
 import os
+import argparse
 from dotenv import load_dotenv
 load_dotenv()
 from starkboard.utils import RepeatedTimer, StarkboardDatabase, chunks
@@ -12,12 +13,19 @@ from datetime import datetime
 import time
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-t", "--transfer_catching", help="Boolean to execute transfer count pipeline", required=False)
+parser.add_argument("-b", "--block_data", help="Boolean to execute block data pipeline", required=False)
+parser.add_argument("-from", "--fromBlock", help="From Block", required=False)
+parser.add_argument("-to", "--toBlock", help="To Block", required=False)
+
+
+
 ######################################################################
 #    Block & Tx Fetcher                                              #
 ######################################################################
 
 last_checked_block = int(os.environ.get("STARTING_BLOCK_FETCHER", transactions_in_block("latest")["block_number"]))
-print(f'Init with block {last_checked_block}')
 
 def block_tx_fetcher(block_id):
     current_block = transactions_in_block(block_id)
@@ -67,8 +75,8 @@ def block_aggreg_fetcher(db):
     return True
 
 
-def update_transfer_count(db):
-    range_block = chunks(range(250260, 250500), 20)
+def update_transfer_count(db, fromBlock, toBlock):
+    range_block = chunks(range(fromBlock, toBlock), 20)
     for rg in range_block:
         for attempt in range(10):
             try:
@@ -129,8 +137,12 @@ signal.signal(signal.SIGINT, handler)
 
 
 if __name__ == '__main__':
+    args = parser.parse_args()
     starkboard_db = StarkboardDatabase()
-    update_transfer_count(starkboard_db)
+    if args.transfer_catching:
+        update_transfer_count(starkboard_db, int(args.fromBlock), int(args.toBlock))
+    if args.block_data:
     #loop = asyncio.get_event_loop()
     #loop.run_until_complete(get_wallets_balance())
-    #rt = RepeatedTimer(0.5, block_aggreg_fetcher, starkboard_db)
+        last_checked_block = int(args.fromBlock)
+        rt = RepeatedTimer(0.5, block_aggreg_fetcher, starkboard_db)

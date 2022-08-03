@@ -180,8 +180,43 @@ class StarkboardDatabase():
             print(e)
             return False
 
+    def get_daily_data_from_blocks(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = """SELECT full_day as day, SUM(count_txs) as count_txs, 
+                SUM(count_transfers) as count_transfers,
+                SUM(count_new_wallets) as count_new_wallets,
+                SUM(count_new_contracts) as count_new_contracts
+                FROM block_data
+                GROUP BY full_day
+                ORDER BY full_day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def insert_daily_data(self, data):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """INSERT INTO daily_data(
+                    day, count_txs, count_new_wallets, count_new_contracts, count_transfers
+                ) VALUES (%s,%s,%s,%s,%s)"""
+            inserted_block = (data["day"], data["count_txs"], 
+                data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"])
+            cursor.execute(sql_insert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            return False
 
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
+

@@ -14,6 +14,22 @@ pip install --upgrade pips
 CFLAGS=-I`brew --prefix gmp`/include LDFLAGS=-L`brew --prefix gmp`/lib pip install -r requirements.txt
 ```
 
+## Scripts
+
+- Fetching and archiving Transactions count for block 
+```
+python fetcher.py -t True --fromBlock 254000 --toBlock 255000
+```
+
+- Fetching and archiving Block data from block
+```
+python fetcher.py -b True --fromBlock 254000 
+```
+
+
+
+
+
 ## Launch API
 
 - Development
