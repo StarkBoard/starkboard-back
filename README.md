@@ -25,3 +25,57 @@ FLASK_ENV=development flask run
 ```
 FLASK_ENV=production flask run
 ```
+
+## Documentation
+
+- `/store_starkboard_og` [POST]
+Store an OG to StarkBoard Database
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| wallet_address  |   String: OG Wallet to store     |
+| signature  |   Signature to store      |
+
+3. Return
+
+```
+{
+    'result': 'Successfully inserted OG 0x0586f215eEAFcA7340A4Ef0D7Cbb9310Ee99122dE3C47f24Cc788F4AeB2f8d9C'
+}
+```
+
+
+- `/get_starkboard_og` [POST]
+Retrieve a OG to StarkBoard Database
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| wallet_address  |   String: OG Wallet to retrieve     |
+
+3. Return
+
+```
+{
+    "signature": "Signed By Exo",
+    "user_rank": 4,
+    "wallet_address": "0x0586f215eEAFcA7340A4Ef0D7Cbb9310Ee99122dE3C47f24Cc788F4AeB2f8d9C"
+}
+```

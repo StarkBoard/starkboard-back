@@ -1,10 +1,9 @@
 from imaplib import _Authenticator
 from app import app
 from flask import request
-from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block
-from starkboard.fees import estimate_fees
-from starkboard.user import count_wallet_deployed
-from starkboard.contracts import count_contract_deployed_current_block, most_used_functions_from_contract
+from starkboard.transactions import transactions_in_block
+from starkboard.contracts import count_contract_deployed_current_block
+from starkboard.utils import StarkboardDatabase
 
 @app.route('/', methods=['GET'])
 def landing():
@@ -16,13 +15,34 @@ def landing():
 #######################
 #######################
 @app.route('/store_starkboard_og', methods=['POST'])
-def get_transactions_in_block():
+def store_starkboard_og():
     """
     Stores a wallet OG with its signature
     """
+    data = request.get_json()
+    starkboard_db = StarkboardDatabase()
+    insert_res = starkboard_db.inserts_starkboard_og(data)
+    starkboard_db.close_connection()
+    if insert_res:
+        return {
+            'result': f'Successfully inserted OG {data["wallet_address"]}'
+        }, 200
+    else:
+        return {
+            'result': f'OG {data["wallet_address"]} already registered'
+        }, 400
 
 
-    return transactions_in_block()
+@app.route('/get_starkboard_og', methods=['POST'])
+def get_starkboard_og():
+    """
+    Stores a wallet OG with its signature
+    """
+    data = request.get_json()
+    starkboard_db = StarkboardDatabase()
+    res = starkboard_db.get_starkboard_og(data)
+    starkboard_db.close_connection()
+    return res, 200
 
 
 #######################
@@ -40,8 +60,9 @@ def get_transactions_in_block():
 def get_daily_count_transfer():
     """
     Retrieve the daily number of tranfer transactions type
+    TBD
     """
-    return get_transfer_transactions_in_block()
+    return {}
 
 
 #######################
@@ -51,9 +72,9 @@ def get_daily_count_transfer():
 def get_count_wallet_deployed():
     """
     Retrieve the daily number of Wallets deployed (ArgentX or Braavos or All)
+    TBD
     """
-    wallet_type = request.args.get('walletType', 'All')
-    return count_wallet_deployed(wallet_type)
+    return {}
 
 
 #######################
@@ -70,9 +91,9 @@ def get_count_contrats_deployed_current_block():
 def get_most_used_functions_from_contract():
     """
     Retrieve the most used functions of a Smart Contract with Count
+    TBD
     """
-    contract_address = request.args.get('contractAddress')
-    return most_used_functions_from_contract(contract_address)
+    return {}
 
 
 #######################
@@ -83,5 +104,6 @@ def get_most_used_functions_from_contract():
 def get_estimate_fees():
     """
     Fees Estimation on the network
+    TBD
     """
-    return estimate_fees()
+    return {}
