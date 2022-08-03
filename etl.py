@@ -8,10 +8,11 @@ from starkboard.utils import StarkboardDatabase
 def get_block_data_by_date(db):
     daily_data = db.get_daily_data_from_blocks()
     for daily in daily_data:
-        db.insert_daily_data(daily)
+        print(daily)
+        #db.insert_daily_data(daily)
     
 
-    
+
     return None
 
 

@@ -76,12 +76,12 @@ def block_aggreg_fetcher(db):
 
 
 def update_transfer_count(db, fromBlock, toBlock):
-    range_block = chunks(range(fromBlock, toBlock), 100)
+    range_block = chunks(range(fromBlock, toBlock), 20)
     for rg in range_block:
         for attempt in range(10):
             try:
                 print(f'Fetching from block {rg[0]} to {rg[-1]}...')
-                transfer_executed = get_transfer_transactions_v2(rg[0], rg[-1])
+                transfer_executed = get_transfer_transactions(rg[0], rg[-1])
                 print(transfer_executed)
                 for block_number, count_transfer in transfer_executed.items():
                     db.update_block_data(block_number, count_transfer)

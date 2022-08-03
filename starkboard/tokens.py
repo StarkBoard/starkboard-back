@@ -43,7 +43,6 @@ async def get_balance_of(wallet_address, token_name="ETH"):
     """
     Retrieve ETH token total supply
     """
-
     with open("abi/ERC20.json") as jsonFile:
         abi = json.load(jsonFile)
         jsonFile.close()

@@ -103,7 +103,6 @@ def get_transfer_transactions_v2(fromBlock, toBlock):
     data = json.loads(r.text)
     results = {}
     events = data["items"]
-    print(f'{len(events)} events fetched.')
     for event in events:
         if event["block_number"] not in results:
             results[event["block_number"]] = 1
@@ -115,7 +114,6 @@ def get_transfer_transactions_v2(fromBlock, toBlock):
         r = starknet_events.get(query)
         data = json.loads(r.text)
         events = data["items"]
-        print(f'{len(events)} events fetched.')
         for event in events:
             if event["block_number"] not in results:
                 results[event["block_number"]] = 1
