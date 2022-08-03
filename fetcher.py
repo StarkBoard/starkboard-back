@@ -65,13 +65,22 @@ def block_aggreg_fetcher(db):
 
 
 def update_transfer_count(db):
-    range_block = chunks(range(250100, 250500), 20)
+    range_block = chunks(range(250260, 250500), 20)
     for rg in range_block:
-        transfer_executed = get_transfer_transactions(rg[0], rg[-1])
-        print(transfer_executed)
-        for block_number, count_transfer in transfer_executed.items():
-            db.update_block_data(block_number, count_transfer)
-        time.sleep(3)
+        while True:
+            try:
+                print(f'Fetching from block {rg[0]} to {rg[-1]}...')
+                transfer_executed = get_transfer_transactions(rg[0], rg[-1])
+                print(transfer_executed)
+                for block_number, count_transfer in transfer_executed.items():
+                    db.update_block_data(block_number, count_transfer)
+                time.sleep(5)
+            except Exception as e:
+                print("Fetch Error...")
+                continue
+            finally:
+                break
+            
         
 
 ######################################################################
