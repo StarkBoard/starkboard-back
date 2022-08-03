@@ -42,7 +42,11 @@ def block_tx_fetcher(block_id):
 def block_aggreg_fetcher(db):
     global last_checked_block
     print(f'Checking next block {last_checked_block + 1}')
-    current_block, wallet_deployed, contract_deployed, transfer_executed, current_block_number = block_tx_fetcher(last_checked_block + 1)
+    try:
+        current_block, wallet_deployed, contract_deployed, transfer_executed, current_block_number = block_tx_fetcher(last_checked_block + 1)
+    except Exception as e:
+        print("Connection timed out, retrying...")
+        return True
     block_data = {
         "block_number": current_block["block_number"],
         "timestamp": datetime.fromtimestamp(current_block["accepted_time"]).strftime('%Y-%m-%d %H:%M:%S'),
@@ -52,7 +56,6 @@ def block_aggreg_fetcher(db):
         "count_new_contracts": contract_deployed["count_deployed_contracts"],
         "count_transfers": transfer_executed["count_transfer"]
     }
-    print(block_data)
     insert_res = db.insert_block_data(block_data)
     if insert_res:
         print("Block Inserted !")
@@ -89,8 +92,8 @@ def user_wallets_storage():
 async def get_wallets_balance():
     with open("testnet_wallets.txt") as file:
         for address in file:
-            print(address)
-            await get_balance_of(address, "ETH")
+            bal = await get_balance_of(address, "ETH")
+            print(f'Wallet {address} has {bal} ETH')
 
 
 def handler(signum, frame):
@@ -108,4 +111,4 @@ if __name__ == '__main__':
     starkboard_db = StarkboardDatabase()
     #loop = asyncio.get_event_loop()
     #loop.run_until_complete(get_wallets_balance())
-    rt = RepeatedTimer(5, block_aggreg_fetcher, starkboard_db)
+    rt = RepeatedTimer(4, block_aggreg_fetcher, starkboard_db)

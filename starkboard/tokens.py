@@ -29,7 +29,7 @@ async def get_eth_total_supply():
     """
     Retrieve ETH token total supply
     """
-    #contract = await Contract.from_address(address=ethereum_address, client=client)
+    #21340212719716957978097
     with open("abi/ERC20.json") as jsonFile:
         abi = json.load(jsonFile)
         jsonFile.close()
@@ -47,10 +47,9 @@ async def get_balance_of(wallet_address, token_name="ETH"):
     with open("abi/ERC20.json") as jsonFile:
         abi = json.load(jsonFile)
         jsonFile.close()
-    accountContract = AccountClient(address=token_addresses[token_name], client=client, signer=BaseSigner)
-
+    accountContract = AccountClient(address=wallet_address, client=client, signer=BaseSigner)
     try:
-        balance = await accountContract.get_balance(wallet_address)
+        balance = await accountContract.get_balance(token_addresses[token_name])
     except Exception as e:
         balance = 0
-    print(f'Balance of {wallet_address} : {balance / 10**18}')
+    return balance / 10**18

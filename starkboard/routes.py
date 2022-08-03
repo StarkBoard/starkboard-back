@@ -10,6 +10,21 @@ from starkboard.contracts import count_contract_deployed_current_block, most_use
 def landing():
     return 'ODA API'
 
+
+#######################
+#    General Route    #
+#######################
+#######################
+@app.route('/store_starkboard_og', methods=['POST'])
+def get_transactions_in_block():
+    """
+    Stores a wallet OG with its signature
+    """
+
+
+    return transactions_in_block()
+
+
 #######################
 # Transactions Routes #
 #######################
