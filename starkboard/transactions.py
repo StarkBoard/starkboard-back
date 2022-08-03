@@ -32,24 +32,21 @@ def get_transfer_transactions_in_block(block):
         "filter": {
             "fromBlock": block, 
             "toBlock": block, 
-            "page_size": 1000,
+            "page_size": 500,
             "page_number": 0, 
             "keys": transfer_key
         }
     }
+
     r = staknet_node.post("", method="starknet_getEvents", params=params)
     data = json.loads(r.text)["result"]
     count_transfer = len(data["events"])
-    
     while not data["is_last_page"]:
         print(count_transfer)
         params["filter"]["page_number"] += 1
         r = staknet_node.post("", method="starknet_getEvents", params=params)
         data = json.loads(r.text)["result"]
         count_transfer += len(data["events"])
-
-    today = datetime.now()
-    last_day = today - timedelta(days=1)
     return {
         "count_transfer": count_transfer
     }

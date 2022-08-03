@@ -13,3 +13,5 @@ urllib3==1.26.11
 Werkzeug==2.2.0
 zipp==3.8.1
 starknet.py==0.4.4a0
+boto3==1.24.44
+pymysql==1.0.2

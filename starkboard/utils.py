@@ -3,9 +3,12 @@ import json
 import os
 from datetime import datetime, time, timedelta
 from threading import Timer
-
+from db import get_connection
 
 class Requester:
+    """
+    Custom API Request module
+    """
     def __init__(self, base_url, **kwargs):
         self.base_url = base_url
         self.session = requests.Session()
@@ -68,6 +71,9 @@ class Requester:
 
 
 class RepeatedTimer(object):
+    """
+    Automated timer to repeat function undefinitely each {interval} seconds
+    """
     def __init__(self, interval, function, *args, **kwargs):
         self._timer     = None
         self.interval   = interval
@@ -75,12 +81,15 @@ class RepeatedTimer(object):
         self.args       = args
         self.kwargs     = kwargs
         self.is_running = False
+        self.previous_run = True
         self.start()
 
     def _run(self):
         self.is_running = False
         self.start()
-        self.function(*self.args, **self.kwargs)
+        if self.previous_run:
+            self.previous_run = False
+            self.previous_run = self.function(*self.args, **self.kwargs)
 
     def start(self):
         if not self.is_running:
@@ -91,3 +100,37 @@ class RepeatedTimer(object):
     def stop(self):
         self._timer.cancel()
         self.is_running = False
+
+
+class StarkboardDatabase():
+    """
+    Starkboard MySQL Database handler
+    """
+    def __init__(self):
+        self._connection = get_connection()
+
+    def execute_query(self, query):
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute(query)
+            self._connection.commit()
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+    def insert_block_data(self, data):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """INSERT INTO block_data(
+                    block_number, timestamp, full_day, count_txs, count_new_wallets, count_new_contracts, count_transfers
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s)"""
+            inserted_block = (data["block_number"], data["timestamp"], data["full_day"], data["count_txs"], 
+                data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"])
+            cursor.execute(sql_insert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            return False

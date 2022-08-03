@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 load_dotenv()
-from starkboard.utils import RepeatedTimer
+from starkboard.utils import RepeatedTimer, StarkboardDatabase
 from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block
 from starkboard.user import count_wallet_deployed, get_wallet_address_deployed
 from starkboard.contracts import count_contract_deployed_int_block
@@ -23,7 +23,7 @@ def block_tx_fetcher(block_id):
     current_block = transactions_in_block(block_id)
     if 'code' in current_block:
         print("Still same block...")
-        return None, None, block_id - 1
+        return None, None, None, None, block_id - 1
 
     wallet_deployed = count_wallet_deployed(wallet_type="All", fromBlock=block_id, toBlock=block_id)
     contract_deployed = count_contract_deployed_int_block(block_id)
@@ -36,16 +36,30 @@ def block_tx_fetcher(block_id):
     print(f'> {contract_deployed["count_deployed_contracts"]} Contract deployed in block.')
     print(f'> {transfer_executed["count_transfer"]} Transfer executed in block.')
 
-    return current_block, wallet_deployed, current_block["block_number"]
+    return current_block, wallet_deployed, contract_deployed, transfer_executed, current_block["block_number"]
 
 
-def block_aggreg_fetcher():
+def block_aggreg_fetcher(db):
     global last_checked_block
     print(f'Checking next block {last_checked_block + 1}')
-    current_block, wallet_deployed, current_block_number = block_tx_fetcher(last_checked_block + 1)
-
-
-    last_checked_block = current_block_number
+    current_block, wallet_deployed, contract_deployed, transfer_executed, current_block_number = block_tx_fetcher(last_checked_block + 1)
+    block_data = {
+        "block_number": current_block["block_number"],
+        "timestamp": datetime.fromtimestamp(current_block["accepted_time"]).strftime('%Y-%m-%d %H:%M:%S'),
+        "full_day": datetime.fromtimestamp(current_block["accepted_time"]).strftime('%Y-%m-%d'),
+        "count_txs": len(current_block["transactions"]),
+        "count_new_wallets": wallet_deployed["deployed_wallets"],
+        "count_new_contracts": contract_deployed["count_deployed_contracts"],
+        "count_transfers": transfer_executed["count_transfer"]
+    }
+    print(block_data)
+    insert_res = db.insert_block_data(block_data)
+    if insert_res:
+        print("Block Inserted !")
+        last_checked_block = current_block_number
+    else:
+        print("Error Inserting Block. Retrying")
+    return True
 
 
 ######################################################################
@@ -91,6 +105,7 @@ signal.signal(signal.SIGINT, handler)
 
 
 if __name__ == '__main__':
+    starkboard_db = StarkboardDatabase()
     #loop = asyncio.get_event_loop()
     #loop.run_until_complete(get_wallets_balance())
-    rt = RepeatedTimer(5, block_aggreg_fetcher)
+    rt = RepeatedTimer(5, block_aggreg_fetcher, starkboard_db)
