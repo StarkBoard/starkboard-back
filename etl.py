@@ -7,10 +7,10 @@ from starkboard.utils import StarkboardDatabase
 
 def get_block_data_by_date(db):
     daily_data = db.get_daily_data_from_blocks()
-    for daily in daily_data:
+    for day_count, daily in enumerate(daily_data):
         print(f'Inserting data on {daily["day"]}')
         db.insert_daily_data(daily)
-    
+        if day_count > 5: return None
     return None
 
 
