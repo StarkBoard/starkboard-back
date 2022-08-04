@@ -45,6 +45,11 @@ FLASK_ENV=development flask run
 FLASK_ENV=production flask run
 ```
 
+- AWS Deployment
+```
+eb deploy
+```
+
 ## Documentation
 
 Route returing error will always return a dict : 

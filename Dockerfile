@@ -31,6 +31,6 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY . /app
 WORKDIR /app
 
-EXPOSE 5000
+EXPOSE 8080
 
 CMD [ "python3",  "app.py" ]
