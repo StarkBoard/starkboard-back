@@ -1,7 +1,7 @@
 import requests
 import json
 import os
-from datetime import datetime, time, timedelta
+from datetime import datetime, date
 from threading import Timer
 from db import get_connection
 
@@ -34,7 +34,7 @@ class Requester:
         return self.session.get(self.base_url+url, **kwargs)
 
     def post(self, url, method=None, params=None, **kwargs):
-        if self.base_url == os.environ.get("STARKNET_NODE_URL"):
+        if self.base_url == os.environ.get("STARKNET_NODE_URL") or self.base_url == os.environ.get('STARKNET_NODE_URL_MAINNET'):
             data = self.get_request_data(method, params)
         else:
             data = json.dumps(params)
@@ -107,6 +107,10 @@ class StarkboardDatabase():
     Starkboard MySQL Database handler
     """
     def __init__(self):
+        if os.environ.get("IS_MAINNET") == "True":
+            self._mainnet_suffix = "_mainnet"
+        else:
+            self._mainnet_suffix = ""
         self._connection = get_connection()
 
     def close_connection(self):
@@ -125,7 +129,7 @@ class StarkboardDatabase():
     def insert_block_data(self, data):
         try:
             cursor = self._connection.cursor()
-            sql_insert_query = """INSERT INTO block_data(
+            sql_insert_query = f"""INSERT INTO block_data{self._mainnet_suffix}(
                     block_number, timestamp, full_day, count_txs, count_new_wallets, count_new_contracts, count_transfers
                 ) VALUES (%s,%s,%s,%s,%s,%s,%s)"""
             inserted_block = (data["block_number"], data["timestamp"], data["full_day"], data["count_txs"], 
@@ -141,7 +145,7 @@ class StarkboardDatabase():
     def update_block_data(self, block_number, count_transfer):
         try:
             cursor = self._connection.cursor()
-            sql_insert_query = """UPDATE block_data SET count_transfers=%s WHERE block_number=%s;"""
+            sql_insert_query = f"""UPDATE block_data{self._mainnet_suffix} SET count_transfers=%s WHERE block_number=%s;"""
             inserted_block = (count_transfer, block_number)
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
@@ -183,11 +187,11 @@ class StarkboardDatabase():
     def get_daily_data_from_blocks(self):
         try:
             cursor = self._connection.cursor()
-            sql_select_query = """SELECT full_day as day, SUM(count_txs) as count_txs, 
+            sql_select_query = f"""SELECT full_day as day, SUM(count_txs) as count_txs, 
                 SUM(count_transfers) as count_transfers,
                 SUM(count_new_wallets) as count_new_wallets,
                 SUM(count_new_contracts) as count_new_contracts
-                FROM block_data
+                FROM block_data{self._mainnet_suffix}
                 GROUP BY full_day
                 ORDER BY full_day DESC"""
             cursor.execute(sql_select_query)
@@ -202,18 +206,70 @@ class StarkboardDatabase():
     def insert_daily_data(self, data):
         try:
             cursor = self._connection.cursor()
-            sql_insert_query = """INSERT INTO daily_data(
-                    day, count_txs, count_new_wallets, count_new_contracts, count_transfers
-                ) VALUES (%s,%s,%s,%s,%s)"""
-            inserted_block = (data["day"], data["count_txs"], 
-                data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"])
-            cursor.execute(sql_insert_query, inserted_block)
+            sql_upsert_query = f"""INSERT INTO daily_data{self._mainnet_suffix}(
+                day, count_txs, count_new_wallets, count_new_contracts, count_transfers
+                ) VALUES (%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
+                day=%s, count_txs=%s, count_new_wallets=%s, count_new_contracts=%s, count_transfers=%s
+            """
+            inserted_block = (
+                data["day"], data["count_txs"], 
+                data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"],
+                data["day"], data["count_txs"], 
+                data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"]
+            )
+            cursor.execute(sql_upsert_query, inserted_block)
             self._connection.commit()
             cursor.close()
             return True
         except Exception as e:
             print(e)
             return False
+
+    def delete_old_block_data(self, date):
+        try:
+            cursor = self._connection.cursor()
+            sql_delete_query = f"""DELETE FROM block_data{self._mainnet_suffix}
+                WHERE full_day < '{date}'"""
+            cursor.execute(sql_delete_query)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+
+    def get_daily_data(self, date=date.today().strftime('%Y-%m-%d')):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT *
+                FROM daily_data{self._mainnet_suffix}
+                WHERE day = '{date}'
+                ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchone()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_historical_daily_data(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT *
+                FROM daily_data{self._mainnet_suffix}
+                ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
 
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""

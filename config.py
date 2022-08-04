@@ -1,14 +1,15 @@
 import os
 
 class Config:
-    DEBUG = False
-    DEVELOPMENT = False
     SECRET_KEY = os.getenv("SECRET_KEY", "")
 
 class ProductionConfig(Config):
-    pass
-
+    TESTING = False
+    DEBUG = False
+    DEVELOPMENT = False
 
 class DevelopmentConfig(Config):
+    ENV='development'
+    TESTING = True
     DEBUG = True
     DEVELOPMENT = True

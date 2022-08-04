@@ -3,7 +3,11 @@ import json
 from starkboard.utils import Requester
 from datetime import datetime, time, timedelta
 
-staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
+if os.environ.get("IS_MAINNET") == "True":
+    staknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
+else:
+    staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
+
 starknet_events = Requester("http://starknet.events/api/v1/get_events", headers={"Content-Type": "application/json"})
 
 

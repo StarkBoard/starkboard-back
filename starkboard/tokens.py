@@ -4,13 +4,18 @@ from starkboard.utils import Requester
 from datetime import datetime, time, timedelta
 from starknet_py.contract import Contract
 from starknet_py.net.gateway_client import GatewayClient
-from starknet_py.net.networks import TESTNET
+from starknet_py.net.networks import TESTNET, MAINNET
 from starknet_py.cairo.felt import decode_shortstring
 from starknet_py.net.account.account_client import AccountClient
 from starknet_py.net.signer import BaseSigner
 
-staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
-client = GatewayClient(TESTNET)
+if os.environ.get("IS_MAINNET") == "True":
+    staknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
+    client = GatewayClient(MAINNET)
+else:
+    staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
+    client = GatewayClient(TESTNET)
+
 
 
 ################################1

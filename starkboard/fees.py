@@ -2,7 +2,10 @@ import os
 import json
 from starkboard.utils import Requester
 
-staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
+if os.environ.get("IS_MAINNET") == "True":
+    staknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
+else:
+    staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
 
 def estimate_fees():
     """

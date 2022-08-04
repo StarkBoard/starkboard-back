@@ -35,15 +35,15 @@ def block_tx_fetcher(block_id):
 
     wallet_deployed = count_wallet_deployed(wallet_type="All", fromBlock=block_id, toBlock=block_id)
     contract_deployed = count_contract_deployed_int_block(block_id)
-    #transfer_executed = get_transfer_transactions_in_block(block_id)
+    transfer_executed = get_transfer_transactions_in_block(block_id)
     print("---")
     print(f'Fetched Block {current_block["block_number"]} at {datetime.fromtimestamp(current_block["accepted_time"])}')
     print(f'> {len(current_block["transactions"])} Txs found in block.')
     print(f'> {wallet_deployed["deployed_wallets"]} User Wallet created in block.')
     print(f'> {contract_deployed["count_deployed_contracts"]} Contract deployed in block.')
-    #print(f'> {transfer_executed["count_transfer"]} Transfer executed in block.')
+    print(f'> {transfer_executed["count_transfer"]} Transfer executed in block.')
 
-    return current_block, wallet_deployed, contract_deployed, None, current_block["block_number"]
+    return current_block, wallet_deployed, contract_deployed, transfer_executed, current_block["block_number"]
 
 
 def block_aggreg_fetcher(db):
@@ -64,7 +64,7 @@ def block_aggreg_fetcher(db):
         "count_txs": len(current_block["transactions"]),
         "count_new_wallets": wallet_deployed["deployed_wallets"],
         "count_new_contracts": contract_deployed["count_deployed_contracts"],
-        "count_transfers": 0
+        "count_transfers": transfer_executed["count_transfer"]
     }
     insert_res = db.insert_block_data(block_data)
     if insert_res:
@@ -76,7 +76,7 @@ def block_aggreg_fetcher(db):
 
 
 def update_transfer_count(db, fromBlock, toBlock):
-    range_block = chunks(range(fromBlock, toBlock), 20)
+    range_block = chunks(range(fromBlock, toBlock), 200)
     for rg in range_block:
         for attempt in range(10):
             try:
@@ -92,7 +92,6 @@ def update_transfer_count(db, fromBlock, toBlock):
             else:
                 break
             
-        
 
 ######################################################################
 #    TVL, ERC20 & ETH data                                           #
@@ -145,4 +144,4 @@ if __name__ == '__main__':
     #loop = asyncio.get_event_loop()
     #loop.run_until_complete(get_wallets_balance())
         last_checked_block = int(args.fromBlock)
-        rt = RepeatedTimer(0.5, block_aggreg_fetcher, starkboard_db)
+        rt = RepeatedTimer(30, block_aggreg_fetcher, starkboard_db)

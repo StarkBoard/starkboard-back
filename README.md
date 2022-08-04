@@ -18,15 +18,18 @@ CFLAGS=-I`brew --prefix gmp`/include LDFLAGS=-L`brew --prefix gmp`/lib pip insta
 
 - Fetching and archiving Transactions count for block 
 ```
-python fetcher.py -t True --fromBlock 260000 --toBlock 265000
+python fetcher.py -t True --fromBlock 0 --toBlock 200000
 ```
 
 - Fetching and archiving Block data from block
 ```
-python fetcher.py -b True --fromBlock 254000 
+python fetcher.py -b True --fromBlock 0
 ```
 
-
+- Insert final Daily data
+```
+python etl.py
+```
 
 
 
@@ -44,7 +47,14 @@ FLASK_ENV=production flask run
 
 ## Documentation
 
-- `/store_starkboard_og` [POST]
+Route returing error will always return a dict : 
+```
+{
+    'error': 'err msg'
+}
+```
+
+- `/storeStarkboardOg` [POST]
 Store an OG to StarkBoard Database
 
 1. Headers
@@ -70,7 +80,7 @@ Store an OG to StarkBoard Database
 ```
 
 
-- `/get_starkboard_og` [POST]
+- `/getStarkboardOg` [POST]
 Retrieve a OG to StarkBoard Database
 
 1. Headers
@@ -90,8 +100,48 @@ Retrieve a OG to StarkBoard Database
 
 ```
 {
-    "signature": "Signed By Exo",
-    "user_rank": 4,
-    "wallet_address": "0x0586f215eEAFcA7340A4Ef0D7Cbb9310Ee99122dE3C47f24Cc788F4AeB2f8d9C"
+    'result': {
+        "signature": "Signed By Exo",
+        "user_rank": 4,
+        "wallet_address": "0x0586f215eEAFcA7340A4Ef0D7Cbb9310Ee99122dE3C47f24Cc788F4AeB2f8d9C"
+    }
 }
 ```
+
+
+- `/getDailyData` [POST]
+Retrieve daily basic data of StarkNet Onchain dat
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| only_daily  |   Bool: if false, retrieve historical data from first day    |
+| day  |   String: Day to retrieve, today if not provided ('2022-01-31')    |
+
+
+3. Return
+
+```
+{
+    'result': [
+        {
+            "count_new_contracts": 1455,
+            "count_new_wallets": 1009,
+            "count_transfers": 0,
+            "count_txs": 11438,
+            "day": "Thu, 04 Aug 2022 00:00:00 GMT"
+        }
+    ]
+}
+```
+
+
+
