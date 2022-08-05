@@ -22,6 +22,10 @@ def store_starkboard_og():
     """
     try:
         data = request.get_json()
+        if "['" and "']"  not in data.get('signature'):
+            return {
+                "error": "Invalid Signature"
+            }, 400
         starkboard_db = StarkboardDatabase()
         insert_res = starkboard_db.inserts_starkboard_og(data)
         starkboard_db.close_connection()
