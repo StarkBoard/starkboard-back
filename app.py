@@ -1,10 +1,12 @@
 import os
 from flask import Flask
+from flask_cors import CORS
 from dotenv import load_dotenv
 load_dotenv()
 from starkboard.routes import app_routes
 
 app = Flask(__name__)
+CORS(app)
 env_config = os.getenv("APP_SETTINGS", "config.DevelopmentConfig")
 app.config.from_object(env_config)
 
