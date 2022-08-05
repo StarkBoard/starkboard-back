@@ -2,7 +2,7 @@ from imaplib import _Authenticator
 from flask import request, Blueprint
 from starkboard.transactions import transactions_in_block
 from starkboard.contracts import count_contract_deployed_current_block
-from starkboard.utils import StarkboardDatabase
+from starkboard.utils import StarkboardDatabase, require_appkey
 from datetime import date
 
 app_routes = Blueprint('app_routes', __name__)
@@ -16,6 +16,7 @@ def landing():
 #    General Route    #
 #######################
 @app_routes.route('/storeStarkboardOg', methods=['POST'])
+@require_appkey
 def store_starkboard_og():
     """
     Stores a wallet OG with its signature
@@ -42,6 +43,7 @@ def store_starkboard_og():
         return e, 400
 
 @app_routes.route('/getStarkboardOg', methods=['POST'])
+@require_appkey
 def get_starkboard_og():
     """
     Stores a wallet OG with its signature
@@ -68,6 +70,7 @@ def get_starkboard_og():
 #    User Routes      #
 #######################
 @app_routes.route('/getWalletValue', methods=['POST'])
+@require_appkey
 def get_wallet_value():
     """
     Retrieve wallet value (ETH)
@@ -79,6 +82,7 @@ def get_wallet_value():
 #  Global Data Route  #
 #######################
 @app_routes.route('/getDailyData', methods=['POST'])
+@require_appkey
 def getDailyData():
     """
     Retrieve daily data
@@ -99,6 +103,7 @@ def getDailyData():
 #  Contracts Routes   #
 #######################
 @app_routes.route('/getCurrentBlockCountContractsDeployed', methods=['GET'])
+@require_appkey
 def get_count_contrats_deployed_current_block():
     """
     Retrieve the number of Contract deployed on StarkNet on the latest block
@@ -106,6 +111,7 @@ def get_count_contrats_deployed_current_block():
     return count_contract_deployed_current_block()
 
 @app_routes.route('/getMostUsedFunctionFromContract', methods=['GET'])
+@require_appkey
 def get_most_used_functions_from_contract():
     """
     Retrieve the most used functions of a Smart Contract with Count
@@ -119,6 +125,7 @@ def get_most_used_functions_from_contract():
 #######################
 
 @app_routes.route('/estimateFee', methods=['GET'])
+@require_appkey
 def get_estimate_fees():
     """
     Fees Estimation on the network

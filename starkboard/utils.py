@@ -1,6 +1,8 @@
 import requests
 import json
 import os
+from flask import request, abort
+from functools import wraps
 from datetime import datetime, date
 from threading import Timer
 from db import get_connection
@@ -276,3 +278,12 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
+
+def require_appkey(view_function):
+    @wraps(view_function)
+    def decorated_function(*args, **kwargs):
+        if request.headers.get('x-api-key') and request.headers.get('x-api-key') == os.environ.get('API_KEY'):
+            return view_function(*args, **kwargs)
+        else:
+            abort(401)
+    return decorated_function
