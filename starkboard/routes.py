@@ -35,9 +35,16 @@ def store_starkboard_og():
                 'result': f'Successfully inserted OG {data["wallet_address"]}'
             }, 200
         else:
-            return {
-                'error': f'OG {data["wallet_address"]} already registered'
-            }, 400
+            res = starkboard_db.get_starkboard_og(data)
+            starkboard_db.close_connection()
+            if not res:
+                return {
+                    'error': 'Insert OG Error'
+                }, 400
+            else:
+                return {
+                    'result': res
+                }, 200
     except Exception as e:
         print(e)
         return e, 400
