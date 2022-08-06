@@ -29,8 +29,8 @@ def store_starkboard_og():
             }, 400
         starkboard_db = StarkboardDatabase()
         insert_res = starkboard_db.inserts_starkboard_og(data)
-        starkboard_db.close_connection()
         if insert_res:
+            starkboard_db.close_connection()
             return {
                 'result': f'Successfully inserted OG {data["wallet_address"]}'
             }, 200
