@@ -142,6 +142,7 @@ class StarkboardDatabase():
             return True
         except Exception as e:
             print(e)
+            self._connection = get_connection()
             return False
 
     def update_block_data(self, block_number, count_transfer):
@@ -170,6 +171,7 @@ class StarkboardDatabase():
             return True
         except Exception as e:
             print(e)
+            self._connection = get_connection()
             return False
 
     def get_starkboard_og(self, data):
@@ -225,6 +227,7 @@ class StarkboardDatabase():
             return True
         except Exception as e:
             print(e)
+            self._connection = get_connection()
             return False
 
     def delete_old_block_data(self, date):
