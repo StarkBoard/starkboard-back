@@ -1,0 +1,23 @@
+scalar Text
+
+type transfer {
+  id: String!
+  token: String!
+  author: String
+  value: Float!
+  tx_hash: String!
+  fullDay: String!
+  time: String!
+  created_at_block: Int!
+}
+
+type mint {
+  id: String!
+  token: String!
+  type: String!
+  value: Float!
+  tx_hash: String!
+  fullDay: String!
+  time: String!
+  created_at_block: Int!
+}

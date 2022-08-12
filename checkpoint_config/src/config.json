@@ -1,0 +1,7 @@
+{
+	"network": "goerli-alpha",
+	"tokens": ["USDC", "ETH", "DAI"],
+	"startingBlock": 149620,
+	"transferTableName": "transfers",
+	"bridgeTableName": "mints"
+}
