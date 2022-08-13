@@ -18,12 +18,12 @@ CFLAGS=-I`brew --prefix gmp`/include LDFLAGS=-L`brew --prefix gmp`/lib pip insta
 
 - Fetching and archiving Transactions count for block 
 ```
-python fetcher.py -t True --fromBlock 0 --toBlock 200000
+python fetcher.py -t True -n testnet --fromBlock 0 --toBlock 200000
 ```
 
 - Fetching and archiving Block data from block
 ```
-python fetcher.py -b True --fromBlock 0
+python fetcher.py -b True -n testnet --fromBlock 295403
 ```
 
 - Insert final Daily data
@@ -130,6 +130,7 @@ Retrieve daily basic data of StarkNet Onchain dat
 | :--------------- |:---------------:|
 | only_daily  |   Bool: if false, retrieve historical data from first day    |
 | day  |   String: Day to retrieve, today if not provided ('2022-01-31')    |
+| network  |   String: Network to target (mainnet, testnet)    |
 
 
 3. Return

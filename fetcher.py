@@ -2,7 +2,7 @@ import os
 import argparse
 from dotenv import load_dotenv
 load_dotenv()
-from starkboard.utils import RepeatedTimer, StarkboardDatabase, chunks
+from starkboard.utils import RepeatedTimer, StarkboardDatabase, Requester, chunks
 from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block, get_transfer_transactions, get_transfer_transactions_v2
 from starkboard.user import count_wallet_deployed, get_wallet_address_deployed
 from starkboard.contracts import count_contract_deployed_int_block
@@ -18,6 +18,7 @@ parser.add_argument("-t", "--transfer_catching", help="Boolean to execute transf
 parser.add_argument("-b", "--block_data", help="Boolean to execute block data pipeline", required=False)
 parser.add_argument("-from", "--fromBlock", help="From Block", required=False)
 parser.add_argument("-to", "--toBlock", help="To Block", required=False)
+parser.add_argument("-n", "--network", help="Network to target", required=False)
 
 
 
@@ -25,17 +26,17 @@ parser.add_argument("-to", "--toBlock", help="To Block", required=False)
 #    Block & Tx Fetcher                                              #
 ######################################################################
 
-last_checked_block = int(os.environ.get("STARTING_BLOCK_FETCHER", transactions_in_block("latest")["block_number"]))
+last_checked_block = int(os.environ.get("STARTING_BLOCK_FETCHER", 0))
 
-def block_tx_fetcher(block_id):
-    current_block = transactions_in_block(block_id)
+def block_tx_fetcher(block_id, node, gateway):
+    current_block = transactions_in_block(block_id, starknet_node=node)
     if 'code' in current_block:
         print("Still same block...")
         return None, None, None, None, block_id - 1
 
-    wallet_deployed = count_wallet_deployed(wallet_type="All", fromBlock=block_id, toBlock=block_id)
-    contract_deployed = count_contract_deployed_int_block(block_id)
-    transfer_executed = get_transfer_transactions_in_block(block_id)
+    wallet_deployed = count_wallet_deployed(wallet_type="All", fromBlock=block_id, toBlock=block_id, starknet_node=node)
+    contract_deployed = count_contract_deployed_int_block(block_id, starknet_gateway=gateway)
+    transfer_executed = get_transfer_transactions_in_block(block_id, starknet_node=node)
     print("---")
     print(f'Fetched Block {current_block["block_number"]} at {datetime.fromtimestamp(current_block["accepted_time"])}')
     print(f'> {len(current_block["transactions"])} Txs found in block.')
@@ -46,11 +47,11 @@ def block_tx_fetcher(block_id):
     return current_block, wallet_deployed, contract_deployed, transfer_executed, current_block["block_number"]
 
 
-def block_aggreg_fetcher(db):
+def block_aggreg_fetcher(db, node, gateway):
     global last_checked_block
     print(f'Checking next block {last_checked_block + 1}')
     try:
-        current_block, wallet_deployed, contract_deployed, transfer_executed, current_block_number = block_tx_fetcher(last_checked_block + 1)
+        current_block, wallet_deployed, contract_deployed, transfer_executed, current_block_number = block_tx_fetcher(last_checked_block + 1, node, gateway)
         if not current_block:
             print("Connection timed out, retrying...")
             return True
@@ -75,13 +76,13 @@ def block_aggreg_fetcher(db):
     return True
 
 
-def update_transfer_count(db, fromBlock, toBlock):
+def update_transfer_count(db, fromBlock, toBlock, node):
     range_block = chunks(range(fromBlock, toBlock), 200)
     for rg in range_block:
         for attempt in range(10):
             try:
                 print(f'Fetching from block {rg[0]} to {rg[-1]}...')
-                transfer_executed = get_transfer_transactions(rg[0], rg[-1])
+                transfer_executed = get_transfer_transactions(rg[0], rg[-1], node)
                 print(transfer_executed)
                 for block_number, count_transfer in transfer_executed.items():
                     db.update_block_data(block_number, count_transfer)
@@ -109,8 +110,8 @@ async def ethereum_stats():
 ######################################################################
 
 
-def user_wallets_storage():
-    list_wallets = get_wallet_address_deployed(wallet_type="All", fromBlock=270000, toBlock=285030)
+def user_wallets_storage(node):
+    list_wallets = get_wallet_address_deployed(wallet_type="All", fromBlock=270000, toBlock=285030, starknet_node=node)
     with open('testnet_wallets.txt', 'w') as f:
         for wallet in list_wallets:
             f.write(f"{wallet}\n")
@@ -137,11 +138,18 @@ signal.signal(signal.SIGINT, handler)
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    starkboard_db = StarkboardDatabase()
+    if args.network == "mainnet":
+        staknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
+        starknet_gateway = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL_MAINNET"), headers={"Content-Type": "application/json"})
+    else:
+        staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
+        starknet_gateway = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL"), headers={"Content-Type": "application/json"})
+
+    starkboard_db = StarkboardDatabase(args.network)
     if args.transfer_catching:
-        update_transfer_count(starkboard_db, int(args.fromBlock), int(args.toBlock))
+        update_transfer_count(starkboard_db, int(args.fromBlock), int(args.toBlock), staknet_node)
     if args.block_data:
     #loop = asyncio.get_event_loop()
     #loop.run_until_complete(get_wallets_balance())
         last_checked_block = int(args.fromBlock)
-        rt = RepeatedTimer(30, block_aggreg_fetcher, starkboard_db)
+        rt = RepeatedTimer(30, block_aggreg_fetcher, starkboard_db, staknet_node, starknet_gateway)
