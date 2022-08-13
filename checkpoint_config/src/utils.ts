@@ -42,43 +42,34 @@ export const checkpointSourceTransfer = (address: string, startingBlock: number)
 }
 
 export const createTablesIfMissing = () => {
-	let connection = mysql.createConnection(process.env.DATABASE_URL);
+	const connection = mysql.createConnection(process.env.DATABASE_URL);
 	connection.connect((error) => {
 		if (error) {
-			connection.end();
 			throw new Error(error);
 		}
 		connection.query(`CREATE TABLE ${config.transferTableName} (
-			id STRING PRIMARY KEY,
-			token STRING,
-			author STRING,
+			id VARCHAR(255) NOT NULL PRIMARY KEY,
+			token VARCHAR(255) NOT NULL,
+			author VARCHAR(255),
 			value FLOAT,
-			tx_hash STRING
-			fullDay STRING,
-			time STRING,
+			tx_hash VARCHAR(255) NOT NULL,
+			fullDay VARCHAR(255) NOT NULL,
+			time VARCHAR(255) NOT NULL,
 			created_at_block INTEGER
 		)`,
 		(error, results) => {
-			if (error) {
-				connection.end();
-				throw new Error(error);
-			}
 		});
-		connection.query(`CREATE TABLE ${config.transferTableName} (
-			id STRING PRIMARY KEY,
-			token STRING,
-			type STRING,
+		connection.query(`CREATE TABLE ${config.bridgeTableName} (
+			id VARCHAR(255) NOT NULL PRIMARY KEY,
+			token VARCHAR(255) NOT NULL,
+			type VARCHAR(255) NOT NULL,
 			value FLOAT,
-			tx_hash	STRING,
-			fullDay STRING,
-			time STRING,
+			tx_hash	VARCHAR(255) NOT NULL,
+			fullDay VARCHAR(255) NOT NULL,
+			time VARCHAR(255) NOT NULL,
 			created_at_block INTEGER
 		)`,
 		(error, results) => {
-			if (error) {
-				connection.end();
-				throw new Error(error);
-			}
 		});
 		connection.end();
 	});

@@ -47,7 +47,7 @@ for (const tokenSymbol of config.tokens) {
 	checkpointConfig.sources.push(checkpointSourceTransfer(tokens[i].l2_token_address, config.startingBlock));
 }
 
-//createTablesIfMissing();
+createTablesIfMissing();
 // @ts-ignore
 const checkpoint = new Checkpoint(checkpointConfig, writers, schema, checkpointOptions);
 checkpoint.start();
