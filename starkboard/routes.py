@@ -1,8 +1,9 @@
 from imaplib import _Authenticator
+import os
 from flask import request, Blueprint
 from starkboard.transactions import transactions_in_block
 from starkboard.contracts import count_contract_deployed_current_block
-from starkboard.utils import StarkboardDatabase, require_appkey
+from starkboard.utils import StarkboardDatabase, Requester, require_appkey
 from datetime import date
 
 app_routes = Blueprint('app_routes', __name__)
@@ -96,7 +97,7 @@ def getDailyData():
     TBD
     """
     data = request.get_json()
-    starkboard_db = StarkboardDatabase()
+    starkboard_db = StarkboardDatabase(data.get('network'))
     if data.get('daily_only', False):
         res = starkboard_db.get_daily_data(data.get('day', date.today().strftime('%Y-%m-%d')))
     else:
@@ -115,7 +116,15 @@ def get_count_contrats_deployed_current_block():
     """
     Retrieve the number of Contract deployed on StarkNet on the latest block
     """
-    return count_contract_deployed_current_block()
+    data = request.get_json()
+    if data.get('network', 'testnet') == "mainnet":
+        staknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
+        starknet_gateway = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL_MAINNET"), headers={"Content-Type": "application/json"})
+    else:
+        staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
+        starknet_gateway = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL"), headers={"Content-Type": "application/json"})
+
+    return count_contract_deployed_current_block(staknet_node, starknet_gateway)
 
 @app_routes.route('/getMostUsedFunctionFromContract', methods=['GET'])
 @require_appkey

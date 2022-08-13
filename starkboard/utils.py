@@ -108,8 +108,8 @@ class StarkboardDatabase():
     """
     Starkboard MySQL Database handler
     """
-    def __init__(self):
-        if os.environ.get("IS_MAINNET") == "True":
+    def __init__(self, newtork='testnet'):
+        if newtork == "mainnet":
             self._mainnet_suffix = "_mainnet"
         else:
             self._mainnet_suffix = ""

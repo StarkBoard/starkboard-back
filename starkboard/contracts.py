@@ -3,20 +3,11 @@ import json
 from starkboard.utils import Requester
 
 
-if os.environ.get("IS_MAINNET") == "True":
-    staknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
-    starknet_gateway = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL_MAINNET"), headers={"Content-Type": "application/json"})
-else:
-    staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
-    starknet_gateway = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL"), headers={"Content-Type": "application/json"})
-
-
-def count_contract_deployed_current_block():
+def count_contract_deployed_current_block(starknet_node, starknet_gateway):
     """
     Retrieve the number of deployed contracts on StarkNet
-    @TODO
     """
-    r = staknet_node.post("", method="starknet_blockNumber", params=[])
+    r = starknet_node.post("", method="starknet_blockNumber", params=[])
     block_number = json.loads(r.text)["result"]  
     transactions = json.loads(starknet_gateway.get(f"get_block?blockNumber={block_number}").text)
     deploy_tx = [tx for tx in transactions["transactions"] if tx["type"] == "DEPLOY"]
@@ -25,10 +16,9 @@ def count_contract_deployed_current_block():
     }
 
 
-def count_contract_deployed_int_block(block):
+def count_contract_deployed_int_block(block, starknet_gateway):
     """
     Retrieve the number of deployed contracts on StarkNet
-    @TODO
     """
     transactions = json.loads(starknet_gateway.get(f"get_block?blockNumber={block}").text)
     deploy_tx = [tx for tx in transactions["transactions"] if tx["type"] == "DEPLOY"]
