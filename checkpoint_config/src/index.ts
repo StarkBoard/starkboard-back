@@ -32,8 +32,17 @@ const schema = fs.readFileSync(schemaFile, 'utf8');
 const checkpointOptions = {
   logLevel: LogLevel.Info
 };
+
+let nodeUrl;
+if (config.network === 'mainnet-alpha') {
+	nodeUrl = process.env.NODE_URL_MAINNET;
+}
+else if (config.network === 'goerli-alpha') {
+	nodeUrl = process.env.NODE_URL_GOERLI;
+}
 let checkpointConfig = {
 	network: config.network,
+	network_base_url: nodeUrl,
 	sources: new Array
 };
 
