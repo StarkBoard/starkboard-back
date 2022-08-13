@@ -10,7 +10,7 @@ On and Off chain data of StarkNet within a single Flask API
 ```
 python -m venv starkboard-env
 source starkboard-env/bin/activate
-pip install --upgrade pips
+pip install --upgrade pip
 CFLAGS=-I`brew --prefix gmp`/include LDFLAGS=-L`brew --prefix gmp`/lib pip install -r requirements.txt
 ```
 
