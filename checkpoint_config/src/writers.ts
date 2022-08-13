@@ -30,7 +30,8 @@ export async function handleTransfer({ tx, block, receipt, event, mysql }) {
 	}
 
 	const author = toAddress(event.data[0]);
-	const value = toBN(event.data[2]);
+	const recipient = toAddress(event.data[1]);
+	const value = fromWei(toBN(event.data[2]));
 	const txHash = receipt.transaction_hash;
 	const timestamp = block.timestamp;
 	const blockNumber = block.block_number;
@@ -43,96 +44,46 @@ export async function handleTransfer({ tx, block, receipt, event, mysql }) {
 		id = `${blockNumber}/${txHash}`;
 	}
 
-	const transfer = {
-		id,
-		token: tokenSymbol,
-		author,
-		value,
-		tx_hash: txHash,
-		fullDay,
-		time,
-		created_at_block: blockNumber
-	};
-
-	await mysql.queryAsync(`INSERT IGNORE INTO ${transferTableName} SET ?`, [transfer]);
-}
-
-export async function handleWithdraw({ tx, block, receipt, event, mysql }) {
-	let i = 0;
-	let tokenSymbol = "";
-	while (i < tokens.length) {
-		if (toBN(event.from_address).eq(toBN(tokens[i].l2_bridge_address))) {
-			{
-				tokenSymbol = tokens[i].symbol;
-				break;
-			}
+	if (author === '0x0') {
+		const deposit = {
+			id,
+			token: tokenSymbol,
+			type: "deposit",
+			value,
+			tx_hash: txHash,
+			fullDay,
+			time,
+			created_at_block: blockNumber
 		}
-		i++;
+	
+		await mysql.queryAsync(`INSERT IGNORE INTO ${bridgeTableName} SET ?`, [deposit]);
 	}
-
-	const value = fromWei((toBN(event.data[1])), "ether");
-	const txHash = receipt.transaction_hash;
-	const timestamp = block.timestamp;
-	const blockNumber = block.block_number;
-	const { fullDay, time } = dateFormat(timestamp);
-	let id : String;
-	if (txHash.indexOf("0x") !== -1) {
-		id = `${blockNumber}/${txHash.split("x")[1]}`;
-	}
-	else {
-		id = `${blockNumber}/${txHash}`;
-	}
-
-	const withdrawal = {
-		id,
-		token: tokenSymbol,
-		type: "witdhrawal",
-		value,
-		tx_hash: txHash,
-		fullDay,
-		time,
-		created_at_block: blockNumber
-	}
-
-	await mysql.queryAsync(`INSERT IGNORE INTO ${bridgeTableName} SET ?`, [withdrawal]);
-}
-
-export async function handleDeposit({ tx, block, receipt, event, mysql }) {
-	let i = 0;
-	let tokenSymbol = "";
-	while (i < tokens.length) {
-		if (toBN(event.from_address).eq(toBN(tokens[i].l2_bridge_address))) {
-			{
-				tokenSymbol = tokens[i].symbol;
-				break;
-			}
+	else if (recipient === '0x0') {
+		const withdrawal = {
+			id,
+			token: tokenSymbol,
+			type: "witdhrawal",
+			value,
+			tx_hash: txHash,
+			fullDay,
+			time,
+			created_at_block: blockNumber
 		}
-		i++;
-	}
-
-	const value = fromWei((toBN(event.data[1])), "ether");
-	const txHash = receipt.transaction_hash;
-	const timestamp = block.timestamp;
-	const blockNumber = block.block_number;
-	const { fullDay, time } = dateFormat(timestamp);
-	let id : String;
-	if (txHash.indexOf("0x") !== -1) {
-		id = `${blockNumber}/${txHash.split("x")[1]}`;
+	
+		await mysql.queryAsync(`INSERT IGNORE INTO ${bridgeTableName} SET ?`, [withdrawal]);
 	}
 	else {
-		id = `${blockNumber}/${txHash}`;
-	}
+		const transfer = {
+			id,
+			token: tokenSymbol,
+			author,
+			value,
+			tx_hash: txHash,
+			fullDay,
+			time,
+			created_at_block: blockNumber
+		};
 
-	const deposit = {
-		id,
-		token: tokenSymbol,
-		type: "deposit",
-		value,
-		tx_hash: txHash,
-		fullDay,
-		time,
-		created_at_block: blockNumber
+		await mysql.queryAsync(`INSERT IGNORE INTO ${transferTableName} SET ?`, [transfer]);
 	}
-
-	await mysql.queryAsync(`INSERT IGNORE INTO ${bridgeTableName} SET ?`, [deposit]);
 }

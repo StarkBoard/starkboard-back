@@ -4,7 +4,7 @@ import fs from 'fs';
 import Checkpoint, { LogLevel } from '@snapshot-labs/checkpoint';
 import config from './config.json';
 import * as writers from './writers';
-import { checkpointSourceBridge, checkpointSourceTransfer } from './utils';
+import { checkpointSourceTransfer, createTablesIfMissing } from './utils';
 import bothNetTokens from '../tokens.json';
 
 let tokens;
@@ -44,11 +44,10 @@ for (const tokenSymbol of config.tokens) {
 			break;
 		i++;
 	}
-	checkpointConfig.sources.push(checkpointSourceBridge(tokens[i].l2_bridge_address, config.startingBlock));
 	checkpointConfig.sources.push(checkpointSourceTransfer(tokens[i].l2_token_address, config.startingBlock));
 }
 
+//createTablesIfMissing();
 // @ts-ignore
 const checkpoint = new Checkpoint(checkpointConfig, writers, schema, checkpointOptions);
-checkpoint.reset()
-.then(() => {checkpoint.start()});
+checkpoint.start();
