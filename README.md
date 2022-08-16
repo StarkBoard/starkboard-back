@@ -16,11 +16,6 @@ CFLAGS=-I`brew --prefix gmp`/include LDFLAGS=-L`brew --prefix gmp`/lib pip insta
 
 ## Scripts
 
-- Fetching and archiving Transactions count for block 
-```
-python fetcher.py -t True -n testnet --fromBlock 0 --toBlock 200000
-```
-
 - Fetching and archiving Block data from block
 ```
 python fetcher.py -b True -n testnet --fromBlock 295403
