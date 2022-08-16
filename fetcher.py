@@ -20,6 +20,9 @@ parser.add_argument("-from", "--fromBlock", help="From Block", required=False)
 parser.add_argument("-to", "--toBlock", help="To Block", required=False)
 parser.add_argument("-n", "--network", help="Network to target", required=False)
 
+def fetch_checkpoint(db):
+    res = db.get_checkpoint_block()
+    return res['block_number']
 
 
 ######################################################################
@@ -151,5 +154,5 @@ if __name__ == '__main__':
     if args.block_data:
     #loop = asyncio.get_event_loop()
     #loop.run_until_complete(get_wallets_balance())
-        last_checked_block = int(args.fromBlock)
+        last_checked_block = fetch_checkpoint(starkboard_db)
         rt = RepeatedTimer(30, block_aggreg_fetcher, starkboard_db, staknet_node, starknet_gateway)
