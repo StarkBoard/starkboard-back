@@ -188,6 +188,19 @@ class StarkboardDatabase():
             print(e)
             return False
 
+    def get_checkpoint_block(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = f"""SELECT block_number FROM block_data{self._mainnet_suffix} ORDER BY block_number DESC LIMIT 1"""
+            cursor.execute(sql_insert_query)
+            res = cursor.fetchone()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
     def get_daily_data_from_blocks(self):
         try:
             cursor = self._connection.cursor()
