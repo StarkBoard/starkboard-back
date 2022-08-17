@@ -16,8 +16,12 @@ def count_wallet_deployed(wallet_type="All", fromBlock=0, toBlock=0, starknet_no
     """
     params = {
         "filter": {
-            "fromBlock": fromBlock, 
-            "toBlock": toBlock, 
+            "fromBlock": {
+                "block_number": fromBlock
+            }, 
+            "toBlock": {
+                "block_number": toBlock
+            }, 
             "page_size": 500,
             "page_number": 0, 
             "keys": wallet_key[wallet_type]
@@ -46,8 +50,12 @@ def get_wallet_address_deployed(wallet_type="All", fromBlock=0, toBlock=0, stark
     """
     params = {
         "filter": {
-            "fromBlock": fromBlock, 
-            "toBlock": toBlock, 
+            "fromBlock": {
+                "block_number": fromBlock
+            }, 
+            "toBlock": {
+                "block_number": toBlock
+            }, 
             "page_size": 1024,
             "page_number": 0, 
             "keys": wallet_key[wallet_type]

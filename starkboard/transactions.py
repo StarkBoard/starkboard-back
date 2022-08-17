@@ -18,7 +18,10 @@ def transactions_in_block(block_id="latest", starknet_node=None):
     """
     Retrieve the list of transactions hash from a given block number
     """
-    r = starknet_node.post("", method="starknet_getBlockByNumber", params=[block_id])
+    params = {
+        "block_number": block_id
+    }
+    r = starknet_node.post("", method="starknet_getBlockWithTxs", params=[params])
     data = json.loads(r.text)
     if 'error'in data:
         return data['error']
@@ -31,8 +34,12 @@ def get_transfer_transactions_in_block(block, starknet_node):
     """
     params = {
         "filter": {
-            "fromBlock": block, 
-            "toBlock": block, 
+            "fromBlock": {
+                "block_number": block
+            }, 
+            "toBlock": {
+                "block_number": block
+            },
             "page_size": 500,
             "page_number": 0, 
             "keys": transfer_key
@@ -58,8 +65,12 @@ def get_transfer_transactions(fromBlock, toBlock, starknet_node):
     """
     params = {
         "filter": {
-            "fromBlock": fromBlock, 
-            "toBlock": toBlock, 
+            "fromBlock": {
+                "block_number": fromBlock
+            }, 
+            "toBlock": {
+                "block_number": toBlock
+            },
             "page_size": 1000,
             "page_number": 0, 
             "keys": transfer_key

@@ -16,12 +16,11 @@ def count_contract_deployed_current_block(starknet_node, starknet_gateway):
     }
 
 
-def count_contract_deployed_int_block(block, starknet_gateway):
+def count_contract_deployed_in_block(block_transactions):
     """
     Retrieve the number of deployed contracts on StarkNet
     """
-    transactions = json.loads(starknet_gateway.get(f"get_block?blockNumber={block}").text)
-    deploy_tx = [tx for tx in transactions["transactions"] if tx["type"] == "DEPLOY"]
+    deploy_tx = [tx for tx in block_transactions["transactions"] if tx["type"] == "DEPLOY"]
     return {
         "count_deployed_contracts": len(deploy_tx)
     }
