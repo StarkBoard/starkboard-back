@@ -40,7 +40,7 @@ def get_transfer_transactions_in_block(block, starknet_node):
             "toBlock": {
                 "block_number": block
             },
-            "page_size": 500,
+            "page_size": 100,
             "page_number": 0, 
             "keys": transfer_key
         }

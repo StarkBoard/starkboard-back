@@ -37,9 +37,7 @@ def block_tx_fetcher(block_id, node):
         print("Still same block...")
         return None, None, None, None, block_id - 1
     wallet_deployed = count_wallet_deployed(wallet_type="All", fromBlock=block_id, toBlock=block_id, starknet_node=node)
-    print(wallet_deployed)
     contract_deployed = count_contract_deployed_in_block(current_block)
-    print(contract_deployed)
     transfer_executed = get_transfer_transactions_in_block(block_id, starknet_node=node)
     print("---")
     print(f'Fetched Block {current_block["block_number"]} at {datetime.fromtimestamp(current_block["timestamp"])}')
@@ -60,6 +58,7 @@ def block_aggreg_fetcher(db, node):
             print("Connection timed out, retrying...")
             return True
     except Exception as e:
+        print(e)
         print("Connection timed out, retrying...")
         return True
     block_data = {
@@ -143,13 +142,14 @@ signal.signal(signal.SIGINT, handler)
 if __name__ == '__main__':
     args = parser.parse_args()
     if args.network == "mainnet":
+        delay = 30
         staknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
     else:
         staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
-
+        delay = 5
     starkboard_db = StarkboardDatabase(args.network)
     if args.transfer_catching:
         update_transfer_count(starkboard_db, int(args.fromBlock), int(args.toBlock), staknet_node)
     if args.block_data:
         last_checked_block = fetch_checkpoint(starkboard_db)
-        rt = RepeatedTimer(30, block_aggreg_fetcher, starkboard_db, staknet_node)
+        rt = RepeatedTimer(delay, block_aggreg_fetcher, starkboard_db, staknet_node)
