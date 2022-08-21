@@ -16,3 +16,4 @@ zipp==3.8.1
 starknet.py==0.4.4a0
 boto3==1.24.44
 pymysql==1.0.2
+pandas==1.4.3
