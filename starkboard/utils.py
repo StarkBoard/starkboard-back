@@ -445,6 +445,26 @@ class StarkboardDatabase():
             print(e)
             return False
 
+    def get_cummulative_tvl_data(self, token="ETH"):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT t.day, (
+                    SELECT SUM(amount) 
+                    FROM daily_mints{self._mainnet_suffix} t2
+                    WHERE t2.day <= t.day and t2.token = '{token}'
+                ) as aggregated_amount, t.token
+                FROM daily_mints{self._mainnet_suffix} t
+                WHERE t.token = '{token}'
+                ORDER BY t.day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
 
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
