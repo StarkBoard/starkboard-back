@@ -18,7 +18,8 @@ CFLAGS=-I`brew --prefix gmp`/include LDFLAGS=-L`brew --prefix gmp`/lib pip insta
 
 - Fetching and archiving Block data from block
 ```
-python fetcher.py -b True -n testnet --fromBlock 295403
+python fetcher.py -b True -n testnet
+python fetcher.py -b True -n mainnet
 ```
 
 - Insert final Daily data
@@ -134,6 +135,8 @@ Retrieve daily basic data of StarkNet Onchain dat
 {
     'result': [
         {
+            "mean_fees": 0.13,
+            "total_fees": 1.3223,
             "count_new_contracts": 1455,
             "count_new_wallets": 1009,
             "count_transfers": 0,
@@ -144,5 +147,75 @@ Retrieve daily basic data of StarkNet Onchain dat
 }
 ```
 
+- `/getDailyTVLData` [POST]
+Retrieve daily TVL data (organized by tokens) of StarkNet Onchain dat
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| network  |   String: Network to target (mainnet, testnet)    |
+| token  |   String: Optionnal, specific token data to filter on  |
 
 
+3. Return
+
+```
+{
+    'result': [
+        {
+            "count_deposit": 10,
+            "count_withdraw": 2,
+            "avg_deposit": 0.23,
+            "amount": 213,
+            "token": "ETH",
+            "day": "Thu, 04 Aug 2022 00:00:00 GMT"
+        }
+    ]
+}
+```
+
+
+
+- `/getDailyTransferData` [POST]
+Retrieve daily Transfers data (organized by tokens) of StarkNet Onchain dat
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| network  |   String: Network to target (mainnet, testnet)    |
+| token  |   String: Optionnal, specific token data to filter on  |
+
+
+3. Return
+
+```
+{
+    'result': [
+        {
+            "top_wallet": "0x",
+            "max_transfer": 10,
+            "count_transfer": 2,
+            "avg_transfer": 0.23,
+            "amount": 213,
+            "token": "ETH",
+            "day": "Thu, 04 Aug 2022 00:00:00 GMT"
+        }
+    ]
+}
+```

@@ -107,6 +107,36 @@ def getDailyData():
     }, 200
 
 
+@app_routes.route('/getDailyTVLData', methods=['POST'])
+@require_appkey
+def getDailyTVLData():
+    """
+    Retrieve daily TVL data
+    TBD
+    """
+    data = request.get_json()
+    starkboard_db = StarkboardDatabase(data.get('network'))
+    res = starkboard_db.get_historical_tvl_data(data.get('token'))
+    return {
+        'result': res
+    }, 200
+
+
+@app_routes.route('/getDailyTransferData', methods=['POST'])
+@require_appkey
+def getDailyTransferData():
+    """
+    Retrieve daily Transfer data
+    TBD
+    """
+    data = request.get_json()
+    starkboard_db = StarkboardDatabase(data.get('network'))
+    res = starkboard_db.get_historical_transfer_data(data.get('token'))
+    return {
+        'result': res
+    }, 200
+
+
 #######################
 #  Contracts Routes   #
 #######################
