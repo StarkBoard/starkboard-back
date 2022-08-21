@@ -403,6 +403,48 @@ class StarkboardDatabase():
             print(e)
             return False
 
+    def get_historical_tvl_data(self, token):
+        try:
+            cursor = self._connection.cursor()
+            if token:
+                sql_select_query = f"""SELECT *
+                    FROM daily_mints{self._mainnet_suffix}
+                    WHERE token = '{token}'
+                    ORDER BY day DESC"""
+            else:
+                sql_select_query = f"""SELECT *
+                    FROM daily_mints{self._mainnet_suffix}
+                    ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_historical_transfer_data(self, token):
+        try:
+            cursor = self._connection.cursor()
+            if token:
+                sql_select_query = f"""SELECT *
+                    FROM daily_transfers{self._mainnet_suffix}
+                    WHERE token = '{token}'
+                    ORDER BY day DESC"""
+            else:
+                sql_select_query = f"""SELECT *
+                    FROM daily_transfers{self._mainnet_suffix}
+                    ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
 
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
