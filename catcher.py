@@ -103,7 +103,7 @@ def block_aggreg_fetcher_fast(db, node):
     global last_checked_block
     print(f'Checking next block {last_checked_block + 1}')
     try:
-        current_block, wallet_deployed, contract_deployed, current_block_number = block_tx_fetcher(last_checked_block + 1, node)
+        current_block, wallet_deployed, contract_deployed, current_block_number = block_tx_fetcher_fast(last_checked_block + 1, node)
         if not current_block:
             print("Connection timed out, retrying...")
             return True
@@ -196,10 +196,10 @@ if __name__ == '__main__':
         staknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
     else:
         staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
-        delay = 5
+        delay = 1
     starkboard_db = StarkboardDatabase(args.network)
     if args.transfer_catching:
         update_transfer_count(starkboard_db, int(args.fromBlock), int(args.toBlock), staknet_node)
     if args.block_data:
         last_checked_block = fetch_checkpoint(starkboard_db)
-        rt = RepeatedTimer(delay, block_aggreg_fetcher, starkboard_db, staknet_node)
+        rt = RepeatedTimer(delay, block_aggreg_fetcher_fast, starkboard_db, staknet_node)

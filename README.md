@@ -22,11 +22,18 @@ python fetcher.py -b True -n testnet
 python fetcher.py -b True -n mainnet
 ```
 
+(Catcher):
+```
+python catcher.py -b True -n testnet
+python catcher.py -t True -n testnet --fromBlock 296514 --toBlock 300000
+
+```
+
+
 - Insert final Daily data
 ```
 python etl.py
 ```
-
 
 
 ## Launch API
