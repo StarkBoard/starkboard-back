@@ -226,3 +226,68 @@ Retrieve daily Transfers data (organized by tokens) of StarkNet Onchain dat
     ]
 }
 ```
+
+
+- `/getCumulativeMetricEvolution` [POST]
+Retrieve a specific metric evolution over time
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| network  |   String: Network to target (mainnet, testnet)    |
+| field  |   String: Field to retrieve data on (one of : 'count_txs', 'count_new_wallets', 'count_contracts_deployed', 'count_transfers', 'total_fees')  |
+
+
+3. Return
+
+```
+{
+    'result': [
+        {
+            "aggregated_amount": 100,
+            "day": "Thu, 04 Aug 2022 00:00:00 GMT"
+        }
+    ]
+}
+```
+
+
+
+- `/getTokenTVLEvolution` [POST]
+Retrieve a specific token TVL evolution over time
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| network  |   String: Network to target (mainnet, testnet)    |
+| token  |   String: Token ERC20 to retrieve data on (one of : 'ETH', 'DAI', 'WBTC', 'USDT', 'USDC', 'STARK')  |
+
+
+3. Return
+
+```
+{
+    'result': [
+        {
+            "aggregated_amount": 100,
+            "day": "Thu, 04 Aug 2022 00:00:00 GMT"
+        }
+    ]
+}
+```

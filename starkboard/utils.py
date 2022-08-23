@@ -455,7 +455,26 @@ class StarkboardDatabase():
                 ) as aggregated_amount, t.token
                 FROM daily_mints{self._mainnet_suffix} t
                 WHERE t.token = '{token}'
-                ORDER BY t.day DESC"""
+                ORDER BY t.day ASC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_cummulative_field_data(self, field="count_txs"):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT t.day, (
+                    SELECT SUM({field}) 
+                    FROM daily_data{self._mainnet_suffix} t2
+                    WHERE t2.day <= t.day
+                ) as aggregated_amount
+                FROM daily_data{self._mainnet_suffix} t
+                ORDER BY t.day ASC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
             self._connection.commit()
