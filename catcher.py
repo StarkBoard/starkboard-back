@@ -132,15 +132,17 @@ def block_aggreg_fetcher_fast(db, node):
 def update_transfer_count(db, fromBlock, toBlock, node):
     range_block = chunks(range(fromBlock, toBlock), 200)
     for rg in range_block:
-        for attempt in range(10):
+        for attempt in range(50):
             try:
                 print(f'Fetching from block {rg[0]} to {rg[-1]}...')
-                transfer_executed = get_transfer_transactions(rg[0], rg[-1], node)
+                transfer_executed = get_transfer_transactions_v2(rg[0], rg[-1], node)
                 print(transfer_executed)
                 for block_number, count_transfer in transfer_executed.items():
                     db.update_block_data(block_number, count_transfer)
-                time.sleep(5)
+                time.sleep(1)
             except Exception as e:
+                print("E:")
+                print(e)
                 print("Fetch Error...")
                 continue
             else:
