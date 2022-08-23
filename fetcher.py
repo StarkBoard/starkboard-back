@@ -3,7 +3,7 @@ import argparse
 from dotenv import load_dotenv
 load_dotenv()
 from starkboard.utils import RepeatedTimer, StarkboardDatabase, Requester, chunks
-from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block, get_transfer_transactions, get_transfer_transactions_v2
+from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block, get_transfer_transactions, get_transfer_transactions_v2, get_transfer_transactions_in_block_v2
 from starkboard.user import count_wallet_deployed, get_wallet_address_deployed
 from starkboard.contracts import count_contract_deployed_in_block
 from starkboard.tokens import get_eth_total_supply, get_balance_of
@@ -38,7 +38,7 @@ def block_tx_fetcher(block_id, node):
         return None, None, None, None, block_id - 1
     wallet_deployed = count_wallet_deployed(wallet_type="All", fromBlock=block_id, toBlock=block_id, starknet_node=node)
     contract_deployed = count_contract_deployed_in_block(current_block)
-    transfer_executed = get_transfer_transactions_in_block(block_id, starknet_node=node)
+    transfer_executed = get_transfer_transactions_in_block_v2(block_id, starknet_node=node)
     print("---")
     print(f'Fetched Block {current_block["block_number"]} at {datetime.fromtimestamp(current_block["timestamp"])}')
     print(f'> {len(current_block["transactions"])} Txs found in block.')
