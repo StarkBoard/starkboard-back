@@ -154,7 +154,7 @@ def get_estimate_fees():
             starknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
         else:
             starknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
-        actual_fees =  get_block_fees(4533, starknet_node)["mean_fees"]
+        actual_fees =  get_block_fees(None, starknet_node)["mean_fees"]
         return {
             'res': actual_fees
         }, 200

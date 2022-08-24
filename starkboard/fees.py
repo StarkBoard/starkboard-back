@@ -28,8 +28,6 @@ def get_block_fees(block_id, starknet_node=None):
         try:
             actual_fee_request = starknet_node.post("", method="starknet_getTransactionReceipt", params=transaction)
             data_tx = json.loads(actual_fee_request.text)
-            print(data_tx["result"]["transaction_hash"])
-            print(data_tx["result"]["actual_fee"])
             total_fees += int(data_tx["result"]["actual_fee"], 16) / 1e18
         except:
             pass
