@@ -152,6 +152,7 @@ Retrieve daily basic data of StarkNet Onchain dat
         }
     ]
 }
+
 ```
 
 - `/getDailyTVLData` [POST]

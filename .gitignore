@@ -2,6 +2,7 @@ starkboard-env/*
 __pycache__/*
 starkboard/__pycache__/*
 .env
+swagger.json
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
