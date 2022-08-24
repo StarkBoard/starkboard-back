@@ -222,6 +222,84 @@ class StarkboardDatabase():
             print(e)
             return False
 
+    def delete_old_block_data(self, date):
+        try:
+            cursor = self._connection.cursor()
+            sql_delete_query = f"""DELETE FROM block_data{self._mainnet_suffix}
+                WHERE full_day < '{date}'"""
+            cursor.execute(sql_delete_query)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+    ##
+    ## ERC-20 Getters
+    ##
+
+    def get_daily_tvl_data_from_blocks(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT fullDay as day, token,
+                SUM(CASE WHEN type = 'deposit' THEN value ELSE -value END) as amount,
+                SUM(CASE WHEN type = 'deposit' THEN 1 ELSE 0 END) as count_deposit,
+                SUM(CASE WHEN type = 'deposit' THEN 0 ELSE 1 END) as count_withdraw
+                FROM mints{self._mainnet_suffix}
+                GROUP BY fullDay, token
+                ORDER BY fullDay DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_daily_average_deposit_data_from_blocks(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT fullDay as day, token,
+                AVG(value) as avg_deposit
+                FROM mints{self._mainnet_suffix}
+                WHERE type = 'deposit'
+                GROUP BY fullDay, token
+                ORDER BY fullDay DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_daily_transfer_data_from_blocks(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT fullDay as day, token,
+                SUM(value) as amount,
+                AVG(value) as avg_transfer,
+                COUNT(*) as count_transfer,
+                MAX(value) as max_transfer
+                FROM transfers{self._mainnet_suffix}
+                GROUP BY fullDay, token
+                ORDER BY fullDay DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    ##
+    ## Insertors
+    ##
+
     def insert_daily_data(self, data):
         try:
             cursor = self._connection.cursor()
@@ -245,19 +323,56 @@ class StarkboardDatabase():
             self._connection = get_connection()
             return False
 
-    def delete_old_block_data(self, date):
+    def insert_daily_tvl_data(self, data):
         try:
             cursor = self._connection.cursor()
-            sql_delete_query = f"""DELETE FROM block_data{self._mainnet_suffix}
-                WHERE full_day < '{date}'"""
-            cursor.execute(sql_delete_query)
+            sql_upsert_query = f"""INSERT INTO daily_mints{self._mainnet_suffix}(
+                day, token, amount, avg_deposit, count_deposit, count_withdraw
+                ) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
+                day=%s, token=%s, amount=%s, avg_deposit=%s, count_deposit=%s, count_withdraw=%s
+            """
+            inserted_block = (
+                data["day"], data["token"], 
+                data["amount"], data["avg_deposit"], data["count_deposit"], data["count_withdraw"],
+                data["day"], data["token"], 
+                data["amount"], data["avg_deposit"], data["count_deposit"], data["count_withdraw"],
+            )
+            cursor.execute(sql_upsert_query, inserted_block)
             self._connection.commit()
             cursor.close()
             return True
         except Exception as e:
             print(e)
+            self._connection = get_connection()
             return False
 
+
+    def insert_daily_transfers_data(self, data):
+        try:
+            cursor = self._connection.cursor()
+            sql_upsert_query = f"""INSERT INTO daily_transfers{self._mainnet_suffix}(
+                day, token, amount, avg_transfer, count_transfer, max_transfer
+                ) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
+                day=%s, token=%s, amount=%s, avg_transfer=%s, count_transfer=%s, max_transfer=%s
+            """
+            inserted_block = (
+                data["day"], data["token"], 
+                data["amount"], data["avg_transfer"], data["count_transfer"], data["max_transfer"],
+                data["day"], data["token"], 
+                data["amount"], data["avg_transfer"], data["count_transfer"], data["max_transfer"],
+            )
+            cursor.execute(sql_upsert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    ###
+    ### API Getters
+    ###
 
     def get_daily_data(self, date=date.today().strftime('%Y-%m-%d')):
         try:
@@ -281,6 +396,87 @@ class StarkboardDatabase():
             sql_select_query = f"""SELECT *
                 FROM daily_data{self._mainnet_suffix}
                 ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_historical_tvl_data(self, token):
+        try:
+            cursor = self._connection.cursor()
+            if token:
+                sql_select_query = f"""SELECT *
+                    FROM daily_mints{self._mainnet_suffix}
+                    WHERE token = '{token}'
+                    ORDER BY day DESC"""
+            else:
+                sql_select_query = f"""SELECT *
+                    FROM daily_mints{self._mainnet_suffix}
+                    ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_historical_transfer_data(self, token):
+        try:
+            cursor = self._connection.cursor()
+            if token:
+                sql_select_query = f"""SELECT *
+                    FROM daily_transfers{self._mainnet_suffix}
+                    WHERE token = '{token}'
+                    ORDER BY day DESC"""
+            else:
+                sql_select_query = f"""SELECT *
+                    FROM daily_transfers{self._mainnet_suffix}
+                    ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_cummulative_tvl_data(self, token="ETH"):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT t.day, (
+                    SELECT SUM(amount) 
+                    FROM daily_mints{self._mainnet_suffix} t2
+                    WHERE t2.day <= t.day and t2.token = '{token}'
+                ) as aggregated_amount, t.token
+                FROM daily_mints{self._mainnet_suffix} t
+                WHERE t.token = '{token}'
+                ORDER BY t.day ASC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_cummulative_field_data(self, field="count_txs"):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT t.day, (
+                    SELECT SUM({field}) 
+                    FROM daily_data{self._mainnet_suffix} t2
+                    WHERE t2.day <= t.day
+                ) as aggregated_amount
+                FROM daily_data{self._mainnet_suffix} t
+                ORDER BY t.day ASC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
             self._connection.commit()

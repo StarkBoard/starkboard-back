@@ -108,6 +108,62 @@ def getDailyData():
     }, 200
 
 
+@app_routes.route('/getDailyTVLData', methods=['POST'])
+@require_appkey
+def getDailyTVLData():
+    """
+    Retrieve daily TVL data
+    TBD
+    """
+    data = request.get_json()
+    starkboard_db = StarkboardDatabase(data.get('network'))
+    res = starkboard_db.get_historical_tvl_data(data.get('token'))
+    return {
+        'result': res
+    }, 200
+
+
+@app_routes.route('/getDailyTransferData', methods=['POST'])
+@require_appkey
+def getDailyTransferData():
+    """
+    Retrieve daily Transfer data
+    """
+    data = request.get_json()
+    starkboard_db = StarkboardDatabase(data.get('network'))
+    res = starkboard_db.get_historical_transfer_data(data.get('token'))
+    return {
+        'result': res
+    }, 200
+
+
+@app_routes.route('/getCumulativeMetricEvolution', methods=['POST'])
+@require_appkey
+def getCumulativeMetricEvolution():
+    """
+    Retrieve a specific metric evolution over time
+    """
+    data = request.get_json()
+    starkboard_db = StarkboardDatabase(data.get('network'))
+    res = starkboard_db.get_cummulative_field_data(data.get('field'))
+    return {
+        'result': res
+    }, 200
+
+
+@app_routes.route('/getTokenTVLEvolution', methods=['POST'])
+@require_appkey
+def getTokenTVLEvolution():
+    """
+    Retrieve a specific token TVL evolution over time
+    """
+    data = request.get_json()
+    starkboard_db = StarkboardDatabase(data.get('network'))
+    res = starkboard_db.get_cummulative_tvl_data(data.get('token'))
+    return {
+        'result': res
+    }, 200
+
 #######################
 #  Contracts Routes   #
 #######################

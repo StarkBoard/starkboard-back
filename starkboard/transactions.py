@@ -59,6 +59,42 @@ def get_transfer_transactions_in_block(block, starknet_node):
         "count_transfer": count_transfer
     }
 
+
+def get_transfer_transactions_in_block_v2(block, starknet_node):
+    """
+    Retrieve the list of transfer events in a given block
+    """
+    params = {
+        "filter": {
+            "fromBlock": {
+                "block_number": block
+            }, 
+            "toBlock": {
+                "block_number": block
+            },
+            "page_size": 200,
+            "page_number": 0
+        }
+    }
+
+    r = starknet_node.post("", method="starknet_getEvents", params=params)
+    data = json.loads(r.text)["result"]
+    events = data["events"]
+    events = list(filter(lambda event: event['keys'] == transfer_key, events))
+    count_transfer = len(events)
+    while not data["is_last_page"]:
+        print(count_transfer)
+        params["filter"]["page_number"] += 1
+        r = starknet_node.post("", method="starknet_getEvents", params=params)
+        data = json.loads(r.text)["result"]
+        events = data["events"]
+        events = list(filter(lambda event: event['keys'] == transfer_key, events))
+        count_transfer += len(events)
+    return {
+        "count_transfer": count_transfer
+    }
+
+
 def get_transfer_transactions(fromBlock, toBlock, starknet_node):
     """
     Retrieve the list of transfer events in a given block
@@ -78,7 +114,8 @@ def get_transfer_transactions(fromBlock, toBlock, starknet_node):
     }
 
     r = starknet_node.post("", method="starknet_getEvents", params=params)
-    data = json.loads(r.text)["result"]
+    data = json.loads(r.text)
+    data = data["result"]
     results = {}
     events = data["events"]
     print(f'{len(events)} events fetched.')
@@ -101,29 +138,42 @@ def get_transfer_transactions(fromBlock, toBlock, starknet_node):
     return results
 
 
-
-def get_transfer_transactions_v2(fromBlock, toBlock):
+def get_transfer_transactions_v2(fromBlock, toBlock, starknet_node):
     """
     Retrieve the list of transfer events in a given block
     """
-    page_number = 1
+    params = {
+        "filter": {
+            "fromBlock": {
+                "block_number": fromBlock
+            }, 
+            "toBlock": {
+                "block_number": toBlock
+            },
+            "page_size": 1000,
+            "page_number": 0
+        }
+    }
 
-    query = f'?chain_id=testnet&from_block={fromBlock}&to_block={toBlock}&page={page_number}&size=100&key={transfer_key[0]}'
-    r = starknet_events.get(query)
+    r = starknet_node.post("", method="starknet_getEvents", params=params)
     data = json.loads(r.text)
+    data = data["result"]
     results = {}
-    events = data["items"]
+    events = data["events"]
+    events = list(filter(lambda event: event['keys'] == transfer_key, events))
+    print(f'{len(events)} events fetched.')
     for event in events:
         if event["block_number"] not in results:
             results[event["block_number"]] = 1
         else:
             results[event["block_number"]] += 1
-    while not len(events) != 100:
-        page_number += 1
-        query = f'?chain_id=testnet&from_block={fromBlock}&to_block={toBlock}&page={page_number}&size=100&key={transfer_key[0]}'
-        r = starknet_events.get(query)
-        data = json.loads(r.text)
-        events = data["items"]
+    while not data["is_last_page"]:
+        params["filter"]["page_number"] += 1
+        r = starknet_node.post("", method="starknet_getEvents", params=params)
+        data = json.loads(r.text)["result"]
+        events = data["events"]
+        events = list(filter(lambda event: event['keys'] == transfer_key, events))
+        print(f'{len(events)} events fetched.')
         for event in events:
             if event["block_number"] not in results:
                 results[event["block_number"]] = 1
