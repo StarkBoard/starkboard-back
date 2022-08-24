@@ -4,6 +4,7 @@ from flask import request, Blueprint
 from starkboard.transactions import transactions_in_block
 from starkboard.contracts import count_contract_deployed_current_block
 from starkboard.utils import StarkboardDatabase, Requester, require_appkey
+from starkboard.fees import get_block_fees
 from datetime import date
 
 app_routes = Blueprint('app_routes', __name__)
@@ -127,7 +128,6 @@ def getDailyTVLData():
 def getDailyTransferData():
     """
     Retrieve daily Transfer data
-    TBD
     """
     data = request.get_json()
     starkboard_db = StarkboardDatabase(data.get('network'))
@@ -136,6 +136,33 @@ def getDailyTransferData():
         'result': res
     }, 200
 
+
+@app_routes.route('/getCumulativeMetricEvolution', methods=['POST'])
+@require_appkey
+def getCumulativeMetricEvolution():
+    """
+    Retrieve a specific metric evolution over time
+    """
+    data = request.get_json()
+    starkboard_db = StarkboardDatabase(data.get('network'))
+    res = starkboard_db.get_cummulative_field_data(data.get('field'))
+    return {
+        'result': res
+    }, 200
+
+
+@app_routes.route('/getTokenTVLEvolution', methods=['POST'])
+@require_appkey
+def getTokenTVLEvolution():
+    """
+    Retrieve a specific token TVL evolution over time
+    """
+    data = request.get_json()
+    starkboard_db = StarkboardDatabase(data.get('network'))
+    res = starkboard_db.get_cummulative_tvl_data(data.get('token'))
+    return {
+        'result': res
+    }, 200
 
 #######################
 #  Contracts Routes   #
@@ -170,11 +197,25 @@ def get_most_used_functions_from_contract():
 #    Fees Routes      #
 #######################
 
-@app_routes.route('/estimateFee', methods=['GET'])
+@app_routes.route('/estimateFees', methods=['GET'])
 @require_appkey
 def get_estimate_fees():
     """
     Fees Estimation on the network
     TBD
     """
-    return {}
+    try:
+        data = request.get_json()
+        if data.get('network') == "mainnet":
+            starknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
+        else:
+            starknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
+        actual_fees =  get_block_fees(None, starknet_node)["mean_fees"]
+        return {
+            'res': actual_fees
+        }, 200
+    except Exception as e:
+        return {
+            'error': e.message
+        }, 400
+    

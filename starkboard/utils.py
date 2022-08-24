@@ -132,10 +132,10 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_insert_query = f"""INSERT INTO block_data{self._mainnet_suffix}(
-                    block_number, timestamp, full_day, count_txs, count_new_wallets, count_new_contracts, count_transfers
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s)"""
+                    block_number, timestamp, full_day, count_txs, count_new_wallets, count_new_contracts, count_transfers, total_fees, mean_fees
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
             inserted_block = (data["block_number"], data["timestamp"], data["full_day"], data["count_txs"], 
-                data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"])
+                data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"], data["total_fees"], data["mean_fees"])
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
             cursor.close()
@@ -207,7 +207,9 @@ class StarkboardDatabase():
             sql_select_query = f"""SELECT full_day as day, SUM(count_txs) as count_txs, 
                 SUM(count_transfers) as count_transfers,
                 SUM(count_new_wallets) as count_new_wallets,
-                SUM(count_new_contracts) as count_new_contracts
+                SUM(count_new_contracts) as count_new_contracts,
+                SUM(total_fees) as total_fees,
+                AVG(mean_fees) as mean_fees
                 FROM block_data{self._mainnet_suffix}
                 GROUP BY full_day
                 ORDER BY full_day DESC"""
@@ -302,9 +304,9 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_upsert_query = f"""INSERT INTO daily_data{self._mainnet_suffix}(
-                day, count_txs, count_new_wallets, count_new_contracts, count_transfers
-                ) VALUES (%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
-                day=%s, count_txs=%s, count_new_wallets=%s, count_new_contracts=%s, count_transfers=%s
+                day, count_txs, count_new_wallets, count_new_contracts, count_transfers, total_fees, mean_fees
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
+                day=%s, count_txs=%s, count_new_wallets=%s, count_new_contracts=%s, count_transfers=%s, total_fees=%s, mean_fees=%s
             """
             inserted_block = (
                 data["day"], data["count_txs"], 
@@ -455,7 +457,26 @@ class StarkboardDatabase():
                 ) as aggregated_amount, t.token
                 FROM daily_mints{self._mainnet_suffix} t
                 WHERE t.token = '{token}'
-                ORDER BY t.day DESC"""
+                ORDER BY t.day ASC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_cummulative_field_data(self, field="count_txs"):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT t.day, (
+                    SELECT SUM({field}) 
+                    FROM daily_data{self._mainnet_suffix} t2
+                    WHERE t2.day <= t.day
+                ) as aggregated_amount
+                FROM daily_data{self._mainnet_suffix} t
+                ORDER BY t.day ASC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
             self._connection.commit()

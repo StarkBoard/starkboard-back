@@ -7,6 +7,7 @@ from starkboard.transactions import transactions_in_block, get_transfer_transact
 from starkboard.user import count_wallet_deployed, get_wallet_address_deployed
 from starkboard.contracts import count_contract_deployed_in_block
 from starkboard.tokens import get_eth_total_supply, get_balance_of
+from starkboard.fees import get_block_fees
 import signal
 import asyncio
 from datetime import datetime
@@ -39,21 +40,23 @@ def block_tx_fetcher(block_id, node):
     wallet_deployed = count_wallet_deployed(wallet_type="All", fromBlock=block_id, toBlock=block_id, starknet_node=node)
     contract_deployed = count_contract_deployed_in_block(current_block)
     transfer_executed = get_transfer_transactions_in_block_v2(block_id, starknet_node=node)
+    fees = get_block_fees(block_id, starknet_node=node)
     print("---")
     print(f'Fetched Block {current_block["block_number"]} at {datetime.fromtimestamp(current_block["timestamp"])}')
     print(f'> {len(current_block["transactions"])} Txs found in block.')
     print(f'> {wallet_deployed["deployed_wallets"]} User Wallet created in block.')
     print(f'> {contract_deployed["count_deployed_contracts"]} Contract deployed in block.')
     print(f'> {transfer_executed["count_transfer"]} Transfer executed in block.')
-
-    return current_block, wallet_deployed, contract_deployed, transfer_executed, current_block["block_number"]
+    print(f'> {fees["total_fees"]} Total fees in block.')
+    print(f'> {fees["mean_fees"]} Average fees in block.')
+    return current_block, wallet_deployed, contract_deployed, transfer_executed, fees, current_block["block_number"]
 
 
 def block_aggreg_fetcher(db, node):
     global last_checked_block
     print(f'Checking next block {last_checked_block + 1}')
     try:
-        current_block, wallet_deployed, contract_deployed, transfer_executed, current_block_number = block_tx_fetcher(last_checked_block + 1, node)
+        current_block, wallet_deployed, contract_deployed, transfer_executed, fees, current_block_number = block_tx_fetcher(last_checked_block + 1, node)
         if not current_block:
             print("Connection timed out, retrying...")
             return True
@@ -68,7 +71,9 @@ def block_aggreg_fetcher(db, node):
         "count_txs": len(current_block["transactions"]),
         "count_new_wallets": wallet_deployed["deployed_wallets"],
         "count_new_contracts": contract_deployed["count_deployed_contracts"],
-        "count_transfers": transfer_executed["count_transfer"]
+        "count_transfers": transfer_executed["count_transfer"],
+        "total_fees": fees["total_fees"],
+        "mean_fees": fees["mean_fees"]
     }
     insert_res = db.insert_block_data(block_data)
     if insert_res:
