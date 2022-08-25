@@ -36,7 +36,7 @@ def block_tx_fetcher(block_id, node):
     current_block = transactions_in_block(block_id, starknet_node=node)
     if 'code' in current_block:
         print("Still same block...")
-        return None, None, None, None, block_id - 1
+        return None, None, None, None, None, block_id - 1
     wallet_deployed = count_wallet_deployed(wallet_type="All", fromBlock=block_id, toBlock=block_id, starknet_node=node)
     contract_deployed = count_contract_deployed_in_block(current_block)
     transfer_executed = get_transfer_transactions_in_block_v2(block_id, starknet_node=node)
@@ -82,75 +82,6 @@ def block_aggreg_fetcher(db, node):
     else:
         print("Error Inserting Block. Retrying")
     return True
-
-
-
-## Catcher
-
-def block_tx_fetcher_fast(block_id, node):
-    current_block = transactions_in_block(block_id, starknet_node=node)
-    if 'code' in current_block:
-        print("Still same block...")
-        return None, None, None, None, block_id - 1
-    wallet_deployed = count_wallet_deployed(wallet_type="All", fromBlock=block_id, toBlock=block_id, starknet_node=node)
-    contract_deployed = count_contract_deployed_in_block(current_block)
-    print("---")
-    print(f'Fetched Block {current_block["block_number"]} at {datetime.fromtimestamp(current_block["timestamp"])}')
-    print(f'> {len(current_block["transactions"])} Txs found in block.')
-    print(f'> {wallet_deployed["deployed_wallets"]} User Wallet created in block.')
-    print(f'> {contract_deployed["count_deployed_contracts"]} Contract deployed in block.')
-
-    return current_block, wallet_deployed, contract_deployed, current_block["block_number"]
-
-
-
-def block_aggreg_fetcher_fast(db, node):
-    global last_checked_block
-    print(f'Checking next block {last_checked_block + 1}')
-    try:
-        current_block, wallet_deployed, contract_deployed, current_block_number = block_tx_fetcher(last_checked_block + 1, node)
-        if not current_block:
-            print("Connection timed out, retrying...")
-            return True
-    except Exception as e:
-        print(e)
-        print("Connection timed out, retrying...")
-        return True
-    block_data = {
-        "block_number": current_block["block_number"],
-        "timestamp": datetime.fromtimestamp(current_block["timestamp"]).strftime('%Y-%m-%d %H:%M:%S'),
-        "full_day": datetime.fromtimestamp(current_block["timestamp"]).strftime('%Y-%m-%d'),
-        "count_txs": len(current_block["transactions"]),
-        "count_new_wallets": wallet_deployed["deployed_wallets"],
-        "count_new_contracts": contract_deployed["count_deployed_contracts"],
-        "count_transfers": 0
-    }
-    insert_res = db.insert_block_data(block_data)
-    if insert_res:
-        print("Block Inserted !")
-        last_checked_block = current_block_number
-    else:
-        print("Error Inserting Block. Retrying")
-    return True
-
-
-def update_transfer_count(db, fromBlock, toBlock, node):
-    range_block = chunks(range(fromBlock, toBlock), 200)
-    for rg in range_block:
-        for attempt in range(10):
-            try:
-                print(f'Fetching from block {rg[0]} to {rg[-1]}...')
-                transfer_executed = get_transfer_transactions(rg[0], rg[-1], node)
-                print(transfer_executed)
-                for block_number, count_transfer in transfer_executed.items():
-                    db.update_block_data(block_number, count_transfer)
-                time.sleep(5)
-            except Exception as e:
-                print("Fetch Error...")
-                continue
-            else:
-                break
-            
 
 ######################################################################
 #    TVL, ERC20 & ETH data                                           #

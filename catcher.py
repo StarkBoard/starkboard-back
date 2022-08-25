@@ -89,6 +89,7 @@ def block_tx_fetcher_fast(block_id, node):
         return None, None, None, None, block_id - 1
     wallet_deployed = count_wallet_deployed(wallet_type="All", fromBlock=block_id, toBlock=block_id, starknet_node=node)
     contract_deployed = count_contract_deployed_in_block(current_block)
+    
     print("---")
     print(f'Fetched Block {current_block["block_number"]} at {datetime.fromtimestamp(current_block["timestamp"])}')
     print(f'> {len(current_block["transactions"])} Txs found in block.')
