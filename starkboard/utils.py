@@ -309,10 +309,10 @@ class StarkboardDatabase():
                 day=%s, count_txs=%s, count_new_wallets=%s, count_new_contracts=%s, count_transfers=%s, total_fees=%s, mean_fees=%s
             """
             inserted_block = (
-                data["day"], data["count_txs"], 
-                data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"],
-                data["day"], data["count_txs"], 
-                data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"]
+                data["day"], data["count_txs"], data["count_new_wallets"], data["count_new_contracts"], 
+                data["count_transfers"], data["total_fees"], data["mean_fees"],
+                data["day"], data["count_txs"], data["count_new_wallets"], data["count_new_contracts"], 
+                data["count_transfers"], data["total_fees"], data["mean_fees"]
             )
             cursor.execute(sql_upsert_query, inserted_block)
             self._connection.commit()
