@@ -50,7 +50,6 @@ def get_transfer_transactions_in_block(block, starknet_node):
     data = json.loads(r.text)["result"]
     count_transfer = len(data["events"])
     while not data["is_last_page"]:
-        print(count_transfer)
         params["filter"]["page_number"] += 1
         r = starknet_node.post("", method="starknet_getEvents", params=params)
         data = json.loads(r.text)["result"]
