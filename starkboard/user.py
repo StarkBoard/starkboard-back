@@ -1,6 +1,7 @@
 import os
 import json
-from starkboard.utils import Requester
+from starkboard.utils import Requester, get_leaves
+import numpy as np
 
 wallet_key = {
     "ArgentX": ["0x10c19bef19acd19b2c9f4caa40fd47c9fbe1d9f91324d44dcd36be2dae96784"],
@@ -74,3 +75,35 @@ def get_wallet_address_deployed(wallet_type="All", fromBlock=0, toBlock=0, stark
         print(f'{len(list_wallet_address)} Wallets found currently...')
 
     return list_wallet_address
+
+
+#######################
+#      Whitelists     #
+#######################
+
+def fetch_whitelist(db, wl_type):
+    if wl_type == 0:
+        sql_query = f"""SELECT * FROM starkboard_og ORDER BY user_rank ASC LIMIT 2000"""
+    elif wl_type == 1:
+        sql_query = f"""SELECT * FROM starkboard_og ORDER BY user_rank ASC LIMIT 3000 OFFSET 2000"""
+    else:
+        sql_query = f"""SELECT * FROM starkboard_og WHERE user_rank > 7885 ORDER BY RAND() ASC LIMIT 1000"""
+    cursor = db.execute_query(sql_query)
+    res = cursor.fetchall()
+    cursor.close()
+    db.close_connection()
+    return res
+
+def leaves_results(whitelisted):
+    wl = list(map(lambda wl: int(wl.get('wallet_address'), 16), whitelisted))
+    return wl, list(np.ones(len(whitelisted), int))
+
+def whitelist(db, wl_type=0):
+    whitelisted = fetch_whitelist(db, wl_type)
+    wallets, amount = leaves_results(whitelisted)
+    merkle_info = get_leaves(
+        wallets,
+        amount
+    )
+    leaves = list(map(lambda x: x[0], merkle_info))
+    return wallets, leaves

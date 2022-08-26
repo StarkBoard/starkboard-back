@@ -3,8 +3,9 @@ import os
 from flask import request, Blueprint
 from starkboard.transactions import transactions_in_block
 from starkboard.contracts import count_contract_deployed_current_block
-from starkboard.utils import StarkboardDatabase, Requester, require_appkey
+from starkboard.utils import StarkboardDatabase, Requester, require_appkey, generate_merkle_proof
 from starkboard.fees import get_block_fees
+from starkboard.user import whitelist
 from datetime import date
 
 app_routes = Blueprint('app_routes', __name__)
@@ -13,6 +14,9 @@ app_routes = Blueprint('app_routes', __name__)
 def landing():
     return 'ODA API'
 
+wallets_1, leaves_1 = whitelist(StarkboardDatabase(), 0)
+wallets_2, leaves_2 = whitelist(StarkboardDatabase(), 1)
+wallets_3, leaves_3 = whitelist(StarkboardDatabase(), 2)
 
 #######################
 #    General Route    #
@@ -75,6 +79,40 @@ def get_starkboard_og():
             'error': e.message
         }, 400
 
+@app_routes.route('/getWhitelistProof', methods=['POST'])
+@require_appkey
+def get_whitelist_proof():
+    """
+    Get whitelist proof given a wallet address
+    """
+    try:
+        data = request.get_json()
+        wl_type = data.get('wl_type', 0)
+        wallet_address = int(data.get('wallet_address', ''), 16)
+        proof = None
+        if wl_type == 0:
+            leave_number = wallets_1.index(wallet_address)
+            proof = generate_merkle_proof(leaves_1, leave_number)
+        elif wl_type == 1:
+            leave_number = wallets_2.index(wallet_address)
+            proof = generate_merkle_proof(leaves_2, leave_number)
+        else:
+            leave_number = wallets_3.index(wallet_address)
+            proof = generate_merkle_proof(leaves_3, leave_number)
+        if not proof:
+            return {
+                'error': 'User does not exists'
+            }, 400
+        else:
+            return {
+                'result': proof
+            }, 200
+    except ValueError as e:
+        return {
+            'error': str(e)
+        }, 400
+
+
 #######################
 #    User Routes      #
 #######################
@@ -92,10 +130,9 @@ def get_wallet_value():
 #######################
 @app_routes.route('/getDailyData', methods=['POST'])
 @require_appkey
-def getDailyData():
+def get_daily_data():
     """
     Retrieve daily data
-    TBD
     """
     data = request.get_json()
     starkboard_db = StarkboardDatabase(data.get('network'))
@@ -110,10 +147,9 @@ def getDailyData():
 
 @app_routes.route('/getDailyTVLData', methods=['POST'])
 @require_appkey
-def getDailyTVLData():
+def get_daily_tvl_data():
     """
     Retrieve daily TVL data
-    TBD
     """
     data = request.get_json()
     starkboard_db = StarkboardDatabase(data.get('network'))
@@ -125,7 +161,7 @@ def getDailyTVLData():
 
 @app_routes.route('/getDailyTransferData', methods=['POST'])
 @require_appkey
-def getDailyTransferData():
+def get_daily_transfer_data():
     """
     Retrieve daily Transfer data
     """
@@ -139,7 +175,7 @@ def getDailyTransferData():
 
 @app_routes.route('/getCumulativeMetricEvolution', methods=['POST'])
 @require_appkey
-def getCumulativeMetricEvolution():
+def get_cumulative_metric_evolution():
     """
     Retrieve a specific metric evolution over time
     """
@@ -153,7 +189,7 @@ def getCumulativeMetricEvolution():
 
 @app_routes.route('/getTokenTVLEvolution', methods=['POST'])
 @require_appkey
-def getTokenTVLEvolution():
+def get_token_tvl_evolution():
     """
     Retrieve a specific token TVL evolution over time
     """
@@ -202,7 +238,6 @@ def get_most_used_functions_from_contract():
 def get_estimate_fees():
     """
     Fees Estimation on the network
-    TBD
     """
     try:
         data = request.get_json()
