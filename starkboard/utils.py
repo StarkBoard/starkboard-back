@@ -210,10 +210,13 @@ class StarkboardDatabase():
                 SUM(count_new_wallets) as count_new_wallets,
                 SUM(count_new_contracts) as count_new_contracts,
                 SUM(total_fees) as total_fees,
-                AVG(mean_fees) as mean_fees
+                SUM(total_fees) / SUM(count_txs) as mean_fees
                 FROM block_data{self._mainnet_suffix}
                 GROUP BY full_day
                 ORDER BY full_day DESC"""
+#mean_fees of daily metrics table will be used to know avg fee/tx/day
+#    as mean_fees of blocks table will be used to know avg fee/tx/block
+#if you need avg fee/tx, you should rather use SUM(total_fees) / SUM(count_txs) FROM table of daily metrics
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
             self._connection.commit()
