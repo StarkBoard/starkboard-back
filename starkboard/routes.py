@@ -104,6 +104,7 @@ def get_whitelist_proof():
                 'error': 'User does not exists'
             }, 400
         else:
+            proof = [str(pro) for pro in proof]
             return {
                 'result': proof
             }, 200
