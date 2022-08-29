@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+from starkware.crypto.signature.fast_pedersen_hash import pedersen_hash
 from flask import request, abort
 from functools import wraps
 from datetime import datetime, date
@@ -123,10 +124,10 @@ class StarkboardDatabase():
             cursor = self._connection.cursor()
             cursor.execute(query)
             self._connection.commit()
-            return True
+            return cursor
         except Exception as e:
             print(e)
-            return False
+            return None
 
     def insert_block_data(self, data):
         try:
@@ -209,10 +210,13 @@ class StarkboardDatabase():
                 SUM(count_new_wallets) as count_new_wallets,
                 SUM(count_new_contracts) as count_new_contracts,
                 SUM(total_fees) as total_fees,
-                AVG(mean_fees) as mean_fees
+                SUM(total_fees) / SUM(count_txs) as mean_fees
                 FROM block_data{self._mainnet_suffix}
                 GROUP BY full_day
                 ORDER BY full_day DESC"""
+#mean_fees of daily metrics table will be used to know avg fee/tx/day
+#    as mean_fees of blocks table will be used to know avg fee/tx/block
+#if you need avg fee/tx, you should rather use SUM(total_fees) / SUM(count_txs) FROM table of daily metrics
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
             self._connection.commit()
@@ -501,3 +505,87 @@ def require_appkey(view_function):
         else:
             abort(401)
     return decorated_function
+
+
+def generate_merkle_root(values):
+    if len(values) == 1:
+        return values[0]
+
+    if len(values) % 2 != 0:
+        values.append(0)
+
+    next_level = get_next_level(values)
+    return generate_merkle_root(next_level)
+
+# generates merkle proof from an index of the value list
+# each pair of values must be in sorted order
+def generate_merkle_proof(values, index):
+    return generate_proof_helper(values, index, [])
+
+# checks the validity of a merkle proof
+# the last element of the proof should be the root
+def verify_merkle_proof(leaf, proof):
+    root = proof[len(proof)-1]
+    proof = proof[:-1]
+    curr = leaf
+
+    for proof_elem in proof:
+        if curr < proof_elem:
+            curr = pedersen_hash(curr, proof_elem)
+        else:
+            curr = pedersen_hash(proof_elem, curr)
+
+    return curr == root
+
+# gets the leaf node for a particular merkle distributor claim
+def get_leaf(recipient, amount):
+    amount_hash = pedersen_hash(amount, 0)
+    leaf = pedersen_hash(recipient, amount_hash)
+    return leaf
+
+# creates the inital merkle leaf values to use
+def get_leaves(recipients, amounts):
+    values = []
+    for i in range(0, len(recipients)):
+        leaf = get_leaf(recipients[i], amounts[i])
+        value = (leaf, recipients[i], amounts[i])
+        values.append(value)
+
+    if len(values) % 2 != 0:
+        last_value = (0, 0, 0)
+        values.append(last_value)
+
+    return values
+
+def get_next_level(level):
+    next_level = []
+
+    for i in range(0, len(level), 2):
+        node = 0
+        if level[i] < level[i+1]:
+            node = pedersen_hash(level[i], level[i+1])
+        else:
+            node = pedersen_hash(level[i+1], level[i])
+
+        next_level.append(node)
+
+    return next_level
+
+def generate_proof_helper(level, index, proof):
+    if len(level) == 1:
+        return proof
+    if len(level) % 2 != 0:
+        level.append(0)
+
+    next_level = get_next_level(level)
+    index_parent = 0
+
+    for i in range(0, len(level)):
+        if i == index:
+            index_parent = i // 2
+            if i % 2 == 0:
+                proof.append(level[index+1])
+            else:
+                proof.append(level[index-1])
+
+    return generate_proof_helper(next_level, index_parent, proof)
