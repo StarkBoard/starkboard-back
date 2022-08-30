@@ -328,3 +328,35 @@ Retrieve a specific token TVL evolution over time
     ]
 }
 ```
+
+
+- `/getCummulativeTransferVolumeEvolution` [POST]
+Retrieve a specific token transfer volume evolution over time
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| network  |   String: Network to target (mainnet, testnet)    |
+| token  |   String: Token ERC20 to retrieve data on (one of : 'ETH', 'DAI', 'WBTC', 'USDT', 'USDC', 'STARK')  |
+
+
+3. Return
+
+```
+{
+    'result': [
+        {
+            "aggregated_amount": 1237,
+            "day": "Thu, 04 Aug 2022 00:00:00 GMT"
+        }
+    ]
+}
+```
