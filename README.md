@@ -62,6 +62,9 @@ Route returing error will always return a dict :
 }
 ```
 
+### Mint / NFT / Users
+
+
 - `/storeStarkboardOg` [POST]
 Store an OG to StarkBoard Database
 
@@ -115,6 +118,39 @@ Retrieve a OG to StarkBoard Database
     }
 }
 ```
+
+- `/getWhitelistProof` [POST]
+Retrieve a proof given a merkle root and a wallet address
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| wallet_address  |   String: Wallet address to retrieve proof for    |
+| wl_type  |   Integer: 0, 1 or 2 depending on the whitelist status : 0 is top 2000, 1 is if missing next 3000, 2 is random 1000  |
+
+
+3. Return
+
+```
+{
+    'result': [
+        "XXX",
+        "XXX,
+        ...
+    ]
+}
+```
+
+
+### Data
 
 
 - `/getDailyData` [POST]
