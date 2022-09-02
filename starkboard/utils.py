@@ -159,6 +159,19 @@ class StarkboardDatabase():
             print(e)
             return False
 
+    def update_block_fees(self, block_number, fees):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = f"""UPDATE block_data{self._mainnet_suffix} SET total_fees=%s, mean_fees=%s WHERE block_number=%s;"""
+            inserted_block = (fees.get('total_fees'), fees.get('mean_fees'), block_number)
+            cursor.execute(sql_insert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
     def inserts_starkboard_og(self, data):
         try:
             cursor = self._connection.cursor()

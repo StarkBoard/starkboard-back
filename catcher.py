@@ -7,6 +7,7 @@ from starkboard.transactions import transactions_in_block, get_transfer_transact
 from starkboard.user import count_wallet_deployed, get_wallet_address_deployed
 from starkboard.contracts import count_contract_deployed_in_block
 from starkboard.tokens import get_eth_total_supply, get_balance_of
+from starkboard.fees import get_block_fees
 import signal
 import asyncio
 from datetime import datetime
@@ -15,10 +16,12 @@ import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--transfer_catching", help="Boolean to execute transfer count pipeline", required=False)
+parser.add_argument("-f", "--fees_catching", help="Boolean to execute fees_catching pipeline", required=False)
 parser.add_argument("-b", "--block_data", help="Boolean to execute block data pipeline", required=False)
 parser.add_argument("-from", "--fromBlock", help="From Block", required=False)
 parser.add_argument("-to", "--toBlock", help="To Block", required=False)
 parser.add_argument("-n", "--network", help="Network to target", required=False)
+
 
 def fetch_checkpoint(db):
     res = db.get_checkpoint_block()
@@ -150,6 +153,22 @@ def update_transfer_count(db, fromBlock, toBlock, node):
                 break
             
 
+def catch_fees(db, fromBlock, toBlock, node):
+    for block_id in range(fromBlock, toBlock):
+        for attempt in range(50):
+            try:
+                fees = get_block_fees(block_id, starknet_node=node)
+                db.update_block_fees(block_id, fees)
+                print(f'Inserted block {block_id}.')
+            except Exception as e:
+                print("E:")
+                print(e)
+                print("Fetch Error...")
+                continue
+            else:
+                break
+
+
 ######################################################################
 #    TVL, ERC20 & ETH data                                           #
 ######################################################################
@@ -203,6 +222,8 @@ if __name__ == '__main__':
     starkboard_db = StarkboardDatabase(args.network)
     if args.transfer_catching:
         update_transfer_count(starkboard_db, int(args.fromBlock), int(args.toBlock), staknet_node)
+    if args.fees_catching:
+        catch_fees(starkboard_db, int(args.fromBlock), int(args.toBlock), staknet_node)
     if args.block_data:
         last_checked_block = fetch_checkpoint(starkboard_db)
         rt = RepeatedTimer(delay, block_aggreg_fetcher_fast, starkboard_db, staknet_node)
