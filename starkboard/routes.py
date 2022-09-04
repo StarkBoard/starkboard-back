@@ -201,6 +201,19 @@ def get_token_tvl_evolution():
         'result': res
     }, 200
 
+@app_routes.route('/getCummulativeTransferVolumeEvolution', methods=['POST'])
+@require_appkey
+def get_cummulative_transfer_volume_evolution():
+    """
+    Retrieve a specific token transfer volume over time
+    """
+    data = request.get_json()
+    starkboard_db = StarkboardDatabase(data.get('network'))
+    res = starkboard_db.get_cummulative_transfer_volume_data(data.get('token'))
+    return {
+        'result': res
+    }, 200
+
 #######################
 #  Contracts Routes   #
 #######################

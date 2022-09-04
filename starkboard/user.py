@@ -1,5 +1,6 @@
 import os
 import json
+from collections import defaultdict
 from starkboard.utils import Requester, get_leaves
 import numpy as np
 
@@ -75,6 +76,29 @@ def get_wallet_address_deployed(wallet_type="All", fromBlock=0, toBlock=0, stark
         print(f'{len(list_wallet_address)} Wallets found currently...')
 
     return list_wallet_address
+
+
+
+def get_active_wallets_in_block(block_number=0, starknet_node=None):
+    """
+    Retrieve the number of active wallets in block
+    """
+    params = {
+        "block_number": block_number
+    }
+    r = starknet_node.post("", method="starknet_getBlockWithTxs", params=[params])
+    data = json.loads(r.text)
+    if 'error'in data:
+        return data['error']
+    block_txs = data["result"]["transactions"]
+    senders_tx = [tx['contract_address'] for tx in block_txs if tx["type"] == "INVOKE" and tx['signature']]
+    list_wallets = defaultdict(int)
+    for s in senders_tx: list_wallets[s] += 1 
+    sorted_list_wallets = {k: v for k, v in sorted(list_wallets.items(), key=lambda item: item[1], reverse=True)}
+    return {
+        'count_active_wallets': len(sorted_list_wallets),
+        'wallets_active': sorted_list_wallets
+    }
 
 
 #######################

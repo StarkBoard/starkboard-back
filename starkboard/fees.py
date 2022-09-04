@@ -29,7 +29,8 @@ def get_block_fees(block_id, starknet_node=None):
             actual_fee_request = starknet_node.post("", method="starknet_getTransactionReceipt", params=transaction)
             data_tx = json.loads(actual_fee_request.text)
             total_fees += int(data_tx["result"]["actual_fee"], 16) / 1e18
-        except:
+        except Exception as e:
+            print(e)
             pass
     mean_fees = total_fees / len(transactions)
     fees_params = {

@@ -133,10 +133,10 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_insert_query = f"""INSERT INTO block_data{self._mainnet_suffix}(
-                    block_number, timestamp, full_day, count_txs, count_new_wallets, count_new_contracts, count_transfers, total_fees, mean_fees
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+                    block_number, timestamp, full_day, count_txs, count_new_wallets, count_new_contracts, count_transfers, total_fees, mean_fees, wallets_active
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s, %s)"""
             inserted_block = (data["block_number"], data["timestamp"], data["full_day"], data["count_txs"], 
-                data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"], data["total_fees"], data["mean_fees"])
+                data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"], data["total_fees"], data["mean_fees"], data["wallets_active"])
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
             cursor.close()
@@ -151,6 +151,32 @@ class StarkboardDatabase():
             cursor = self._connection.cursor()
             sql_insert_query = f"""UPDATE block_data{self._mainnet_suffix} SET count_transfers=%s WHERE block_number=%s;"""
             inserted_block = (count_transfer, block_number)
+            cursor.execute(sql_insert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+    def update_block_fees(self, block_number, fees):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = f"""UPDATE block_data{self._mainnet_suffix} SET total_fees=%s, mean_fees=%s WHERE block_number=%s;"""
+            inserted_block = (fees.get('total_fees'), fees.get('mean_fees'), block_number)
+            cursor.execute(sql_insert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+    def update_block_users(self, block_number, data):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = f"""UPDATE block_data{self._mainnet_suffix} SET wallets_active=%s WHERE block_number=%s;"""
+            inserted_block = (json.dumps(data.get('wallets_active')), block_number)
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
             cursor.close()
@@ -205,18 +231,17 @@ class StarkboardDatabase():
     def get_daily_data_from_blocks(self):
         try:
             cursor = self._connection.cursor()
+            cursor.execute("SET SESSION group_concat_max_len = 1000000;")
             sql_select_query = f"""SELECT full_day as day, SUM(count_txs) as count_txs, 
                 SUM(count_transfers) as count_transfers,
                 SUM(count_new_wallets) as count_new_wallets,
                 SUM(count_new_contracts) as count_new_contracts,
                 SUM(total_fees) as total_fees,
-                SUM(total_fees) / SUM(count_txs) as mean_fees
+                SUM(total_fees) / SUM(count_txs) as mean_fees,
+                GROUP_CONCAT(wallets_active SEPARATOR ',') as list_wallets_active
                 FROM block_data{self._mainnet_suffix}
                 GROUP BY full_day
                 ORDER BY full_day DESC"""
-#mean_fees of daily metrics table will be used to know avg fee/tx/day
-#    as mean_fees of blocks table will be used to know avg fee/tx/block
-#if you need avg fee/tx, you should rather use SUM(total_fees) / SUM(count_txs) FROM table of daily metrics
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
             self._connection.commit()
@@ -308,15 +333,15 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_upsert_query = f"""INSERT INTO daily_data{self._mainnet_suffix}(
-                day, count_txs, count_new_wallets, count_new_contracts, count_transfers, total_fees, mean_fees
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
-                day=%s, count_txs=%s, count_new_wallets=%s, count_new_contracts=%s, count_transfers=%s, total_fees=%s, mean_fees=%s
+                day, count_txs, count_new_wallets, count_new_contracts, count_transfers, total_fees, mean_fees, count_wallets_active, top_wallets_active
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
+                day=%s, count_txs=%s, count_new_wallets=%s, count_new_contracts=%s, count_transfers=%s, total_fees=%s, mean_fees=%s, count_wallets_active=%s, top_wallets_active=%s
             """
             inserted_block = (
                 data["day"], data["count_txs"], data["count_new_wallets"], data["count_new_contracts"], 
-                data["count_transfers"], data["total_fees"], data["mean_fees"],
+                data["count_transfers"], data["total_fees"], data["mean_fees"], data["count_wallets_active"], json.dumps(data["top_wallets_active"]),
                 data["day"], data["count_txs"], data["count_new_wallets"], data["count_new_contracts"], 
-                data["count_transfers"], data["total_fees"], data["mean_fees"]
+                data["count_transfers"], data["total_fees"], data["mean_fees"], data["count_wallets_active"], json.dumps(data["top_wallets_active"])
             )
             cursor.execute(sql_upsert_query, inserted_block)
             self._connection.commit()
@@ -460,6 +485,26 @@ class StarkboardDatabase():
                     WHERE t2.day <= t.day and t2.token = '{token}'
                 ) as aggregated_amount, t.token
                 FROM daily_mints{self._mainnet_suffix} t
+                WHERE t.token = '{token}'
+                ORDER BY t.day ASC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_cummulative_transfer_volume_data(self, token="ETH"):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT t.day, (
+                    SELECT SUM(amount) 
+                    FROM daily_transfers{self._mainnet_suffix} t2
+                    WHERE t2.day <= t.day and t2.token = '{token}'
+                ) as aggregated_amount, t.token
+                FROM daily_transfers{self._mainnet_suffix} t
                 WHERE t.token = '{token}'
                 ORDER BY t.day ASC"""
             cursor.execute(sql_select_query)

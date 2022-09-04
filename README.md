@@ -26,7 +26,8 @@ python fetcher.py -b True -n mainnet
 ```
 python catcher.py -b True -n testnet
 python catcher.py -t True -n testnet --fromBlock 296514 --toBlock 300000
-
+python catcher.py -f True -n mainnet --fromBlock 0 --toBlock 100
+python catcher.py -u True -n mainnet --fromBlock 0 --toBlock 100
 ```
 
 
@@ -61,6 +62,9 @@ Route returing error will always return a dict :
     'error': 'err msg'
 }
 ```
+
+### Mint / NFT / Users
+
 
 - `/storeStarkboardOg` [POST]
 Store an OG to StarkBoard Database
@@ -115,6 +119,39 @@ Retrieve a OG to StarkBoard Database
     }
 }
 ```
+
+- `/getWhitelistProof` [POST]
+Retrieve a proof given a merkle root and a wallet address
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| wallet_address  |   String: Wallet address to retrieve proof for    |
+| wl_type  |   Integer: 0, 1 or 2 depending on the whitelist status : 0 is top 2000, 1 is if missing next 3000, 2 is random 1000  |
+
+
+3. Return
+
+```
+{
+    'result': [
+        "XXX",
+        "XXX,
+        ...
+    ]
+}
+```
+
+
+### Data
 
 
 - `/getDailyData` [POST]
@@ -287,6 +324,38 @@ Retrieve a specific token TVL evolution over time
     'result': [
         {
             "aggregated_amount": 100,
+            "day": "Thu, 04 Aug 2022 00:00:00 GMT"
+        }
+    ]
+}
+```
+
+
+- `/getCummulativeTransferVolumeEvolution` [POST]
+Retrieve a specific token transfer volume evolution over time
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| network  |   String: Network to target (mainnet, testnet)    |
+| token  |   String: Token ERC20 to retrieve data on (one of : 'ETH', 'DAI', 'WBTC', 'USDT', 'USDC', 'STARK')  |
+
+
+3. Return
+
+```
+{
+    'result': [
+        {
+            "aggregated_amount": 1237,
             "day": "Thu, 04 Aug 2022 00:00:00 GMT"
         }
     ]
