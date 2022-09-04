@@ -1,5 +1,8 @@
 import os
 import pandas as pd
+import json
+from collections import Counter
+from functools import reduce
 from dotenv import load_dotenv
 load_dotenv()
 from starkboard.utils import StarkboardDatabase
@@ -8,6 +11,16 @@ from starkboard.utils import StarkboardDatabase
 def get_block_data_by_date(db):
     daily_data = db.get_daily_data_from_blocks()
     for day_count, daily in enumerate(daily_data):
+        daily['list_wallets_active'] = json.loads('[' + (daily.get('list_wallets_active') or '') + ']')
+        list_wallets = list(map(lambda x: Counter(x), daily['list_wallets_active']))
+        if len(list_wallets) > 0:
+            list_wallets = reduce((lambda x, y: x + y), list_wallets)
+        list_wallets = {k: v for k, v in sorted(dict(list_wallets).items(), key=lambda item: item[1], reverse=True)}
+        daily['count_wallets_active'] = len(list_wallets)
+        if list_wallets == {}:
+            daily['top_wallets_active'] = []
+        else:
+            daily['top_wallets_active'] = list(list_wallets.keys())[:5]
         print(f'Inserting data on {daily["day"]}')
         db.insert_daily_data(daily)
         if day_count > 7: return None
@@ -38,7 +51,8 @@ def get_block_transfers_data_by_date(db):
 
 
 def test_func(db):
-    daily_data_df = pd.DataFrame(db.get_daily_tvl_data_from_blocks())
+    daily_data = db.get_daily_data_from_blocks()
+    print(daily_data[20].get('list_wallets_active'))
 
 
 if __name__ == '__main__':

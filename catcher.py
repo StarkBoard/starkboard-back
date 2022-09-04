@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from starkboard.utils import RepeatedTimer, StarkboardDatabase, Requester, chunks
 from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block, get_transfer_transactions, get_transfer_transactions_v2
-from starkboard.user import count_wallet_deployed, get_wallet_address_deployed
+from starkboard.user import count_wallet_deployed, get_wallet_address_deployed, get_active_wallets_in_block
 from starkboard.contracts import count_contract_deployed_in_block
 from starkboard.tokens import get_eth_total_supply, get_balance_of
 from starkboard.fees import get_block_fees
@@ -12,11 +12,14 @@ import signal
 import asyncio
 from datetime import datetime
 import time
+from collections import Counter
+from functools import reduce
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--transfer_catching", help="Boolean to execute transfer count pipeline", required=False)
 parser.add_argument("-f", "--fees_catching", help="Boolean to execute fees_catching pipeline", required=False)
+parser.add_argument("-u", "--users_catching", help="Boolean to execute Users_catching pipeline", required=False)
 parser.add_argument("-b", "--block_data", help="Boolean to execute block data pipeline", required=False)
 parser.add_argument("-from", "--fromBlock", help="From Block", required=False)
 parser.add_argument("-to", "--toBlock", help="To Block", required=False)
@@ -169,6 +172,19 @@ def catch_fees(db, fromBlock, toBlock, node):
                 break
 
 
+def catch_users(db, fromBlock, toBlock, node):
+    for block_number in range(fromBlock, toBlock):
+        for attempt in range(50):
+            try:
+                data = get_active_wallets_in_block(3311, node)
+                db.update_block_users(block_number, data)
+            except Exception as e:
+                print(e)
+                continue
+            else:
+                break
+
+
 ######################################################################
 #    TVL, ERC20 & ETH data                                           #
 ######################################################################
@@ -215,15 +231,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.network == "mainnet":
         delay = 30
-        staknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
+        starknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
     else:
-        staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
+        starknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
         delay = 1
     starkboard_db = StarkboardDatabase(args.network)
     if args.transfer_catching:
-        update_transfer_count(starkboard_db, int(args.fromBlock), int(args.toBlock), staknet_node)
+        update_transfer_count(starkboard_db, int(args.fromBlock), int(args.toBlock), starknet_node)
     if args.fees_catching:
-        catch_fees(starkboard_db, int(args.fromBlock), int(args.toBlock), staknet_node)
+        catch_fees(starkboard_db, int(args.fromBlock), int(args.toBlock), starknet_node)
+    if args.users_catching:
+        catch_users(starkboard_db, int(args.fromBlock), int(args.toBlock), starknet_node)
     if args.block_data:
         last_checked_block = fetch_checkpoint(starkboard_db)
-        rt = RepeatedTimer(delay, block_aggreg_fetcher_fast, starkboard_db, staknet_node)
+        rt = RepeatedTimer(delay, block_aggreg_fetcher_fast, starkboard_db, starknet_node)

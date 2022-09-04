@@ -27,6 +27,7 @@ python fetcher.py -b True -n mainnet
 python catcher.py -b True -n testnet
 python catcher.py -t True -n testnet --fromBlock 296514 --toBlock 300000
 python catcher.py -f True -n mainnet --fromBlock 0 --toBlock 100
+python catcher.py -u True -n mainnet --fromBlock 0 --toBlock 100
 ```
 
 
