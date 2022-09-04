@@ -136,7 +136,7 @@ class StarkboardDatabase():
                     block_number, timestamp, full_day, count_txs, count_new_wallets, count_new_contracts, count_transfers, total_fees, mean_fees, wallets_active
                 ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s, %s)"""
             inserted_block = (data["block_number"], data["timestamp"], data["full_day"], data["count_txs"], 
-                data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"], data["total_fees"], data["mean_fees"], data["wallets_active"])
+                data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"], data["total_fees"], data["mean_fees"], json.dumps(data["wallets_active"]))
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
             cursor.close()
