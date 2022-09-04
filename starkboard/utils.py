@@ -231,7 +231,7 @@ class StarkboardDatabase():
     def get_daily_data_from_blocks(self):
         try:
             cursor = self._connection.cursor()
-            cursor.execute("SET SESSION group_concat_max_len = 1000000;")
+            cursor.execute("SET SESSION group_concat_max_len = 10000000;")
             sql_select_query = f"""SELECT full_day as day, SUM(count_txs) as count_txs, 
                 SUM(count_transfers) as count_transfers,
                 SUM(count_new_wallets) as count_new_wallets,
