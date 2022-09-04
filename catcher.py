@@ -176,7 +176,7 @@ def catch_users(db, fromBlock, toBlock, node):
     for block_number in range(fromBlock, toBlock):
         for attempt in range(50):
             try:
-                data = get_active_wallets_in_block(3311, node)
+                data = get_active_wallets_in_block(block_number, node)
                 db.update_block_users(block_number, data)
             except Exception as e:
                 print(e)
