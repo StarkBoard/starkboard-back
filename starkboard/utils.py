@@ -251,6 +251,25 @@ class StarkboardDatabase():
             print(e)
             return False
 
+    def get_wallets_info_blocks(self):
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute("SET SESSION group_concat_max_len = 10000000;")
+            sql_select_query = f"""SELECT full_day as day,
+                GROUP_CONCAT(wallets_active SEPARATOR ',') as list_wallets_active
+                FROM block_data{self._mainnet_suffix}
+                WHERE full_day between DATE_SUB(now(),INTERVAL 1 WEEK) and now()
+                GROUP BY full_day
+                ORDER BY full_day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
     def delete_old_block_data(self, date):
         try:
             cursor = self._connection.cursor()

@@ -1,14 +1,25 @@
-import os
 import json
 from collections import defaultdict
-from starkboard.utils import Requester, get_leaves
+from starkboard.utils import Requester, get_leaves, StarkboardDatabase
+from starkboard.tokens import get_balance_of, get_nonce_of
 import numpy as np
+from collections import Counter
+from functools import reduce
+import nest_asyncio
+nest_asyncio.apply()
+import asyncio
+
+
 
 wallet_key = {
     "ArgentX": ["0x10c19bef19acd19b2c9f4caa40fd47c9fbe1d9f91324d44dcd36be2dae96784"],
     "Braavos": ["0x17edf1120040be1bbc6931f143df1cc1cf80bb7f7fdadb251a3668ba3755049"],
     "All": ["0x10c19bef19acd19b2c9f4caa40fd47c9fbe1d9f91324d44dcd36be2dae96784", "0x17edf1120040be1bbc6931f143df1cc1cf80bb7f7fdadb251a3668ba3755049"]
 }
+
+mainnet_ranking = list()
+testnet_ranking = list()
+
 
 def count_wallet_deployed(wallet_type="All", fromBlock=0, toBlock=0, starknet_node=None):
     """
@@ -100,6 +111,52 @@ def get_active_wallets_in_block(block_number=0, starknet_node=None):
         'wallets_active': sorted_list_wallets
     }
 
+
+def fetch_wallets_ranking(db, network="testnet"):
+    """
+    Retrieve the number of active wallets in block
+    """
+    global testnet_ranking
+    global mainnet_ranking
+    print(f"Cron RUNNING : {network}...")
+    raw_wallets_info = db.get_wallets_info_blocks()
+    list_wallets = []
+    for info in raw_wallets_info:
+        list_wallets.append(json.loads('['+info['list_wallets_active']+']')[0])
+    list_wallets = list(map(lambda x: Counter(x), list_wallets))
+    list_wallets = reduce((lambda x, y: x + y), list_wallets)
+    wallets = {k: v for k, v in sorted(list_wallets.items(), key=lambda item: item[1], reverse=True)}
+    list_wallets = list(wallets)[:15]
+    wallet_ranking = []
+    #loop = asyncio.get_event_loop()
+    #looper_eth = asyncio.gather(*[get_balance_of(address, network=network) for address in list_wallets]) 
+    #looper_nonce = asyncio.gather(*[get_nonce_of(address, network=network) for address in list_wallets])
+    #all_groups = asyncio.gather(looper_eth, looper_nonce)    
+    #results = loop.run_until_complete(all_groups)
+    for idx, address in enumerate(list_wallets):
+        eth_balance = get_balance_of(address, network=network)
+        nonce = get_nonce_of(address, network=network)
+        current_res = {
+            "wallet_address": address,
+            "weekly_tx": wallets[address],
+            "eth": eth_balance,
+            "count_txs": nonce
+        }
+        print(current_res)
+        wallet_ranking.append(current_res)
+    if network == "testnet":
+        testnet_ranking = wallet_ranking
+    else:
+        mainnet_ranking = wallet_ranking
+    print(f"Cron FINISHED : {network}!")
+    return wallet_ranking
+
+
+def use_wallets_ranking(network="testnet"):
+    if network == "testnet":
+        return testnet_ranking
+    else:
+        return mainnet_ranking
 
 #######################
 #      Whitelists     #

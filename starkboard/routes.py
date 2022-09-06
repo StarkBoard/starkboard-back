@@ -1,14 +1,15 @@
-from imaplib import _Authenticator
-import os
+import asyncio
 from flask import request, Blueprint
 from starkboard.transactions import transactions_in_block
 from starkboard.contracts import count_contract_deployed_current_block
 from starkboard.utils import StarkboardDatabase, Requester, require_appkey, generate_merkle_proof
 from starkboard.fees import get_block_fees
-from starkboard.user import whitelist
+from starkboard.user import whitelist, use_wallets_ranking
 from datetime import date
+from cache import cache
 
 app_routes = Blueprint('app_routes', __name__)
+
 
 @app_routes.route('/', methods=['GET'])
 def landing():
@@ -125,6 +126,20 @@ def get_wallet_value():
     TBD
     """
     return {}
+
+
+@app_routes.route('/getWalletRanking', methods=['POST'])
+@require_appkey
+def get_wallet_ranking():
+    """
+    Retrieve wallets ranking based on daily data
+    """
+    data = request.get_json()
+    res = use_wallets_ranking(data.get('network'))
+    return {
+        'result': res
+    }, 200
+
 
 #######################
 #  Global Data Route  #
