@@ -16,7 +16,7 @@ requests==2.28.1
 urllib3==1.26.11
 Werkzeug==2.2.0
 zipp==3.8.1
-starknet.py==0.5.1a0
+git+https://github.com/ExoMonk/starknet.py.git
 boto3==1.24.44
 pymysql==1.0.2
 pandas==1.4.3
