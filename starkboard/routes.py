@@ -1,4 +1,3 @@
-import asyncio
 from flask import request, Blueprint
 from starkboard.transactions import transactions_in_block
 from starkboard.contracts import count_contract_deployed_current_block

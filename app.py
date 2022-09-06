@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 load_dotenv()
 from starkboard.routes import app_routes
 from cache import cache
-import asyncio
 from flask_apscheduler import APScheduler
 from starkboard.utils import StarkboardDatabase
 from starkboard.user import fetch_wallets_ranking

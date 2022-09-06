@@ -5,10 +5,6 @@ from starkboard.tokens import get_balance_of, get_nonce_of
 import numpy as np
 from collections import Counter
 from functools import reduce
-import nest_asyncio
-nest_asyncio.apply()
-import asyncio
-
 
 
 wallet_key = {
