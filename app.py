@@ -32,21 +32,18 @@ app.register_blueprint(app_routes)
 if __name__ == '__main__':
     db_mainnet = StarkboardDatabase("mainnet")
     db_testnet = StarkboardDatabase("testnet")
-
     class Config:
         JOBS = [
             {
                 "id": "job1",
                 "func": "starkboard.user:fetch_wallets_ranking",
-                "args": (db_mainnet, "mainnet"),
+                "args": (db_mainnet, db_testnet),
                 "trigger": "interval",
-                "seconds": 220, #43200
+                "seconds": 7200, #43200
                 "next_run_time": datetime.now()
             }
         ]
         SCHEDULER_API_ENABLED = True
-
-
     app.config.from_object(Config())    
     scheduler = APScheduler()
     scheduler.init_app(app)
