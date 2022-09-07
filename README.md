@@ -361,3 +361,45 @@ Retrieve a specific token transfer volume evolution over time
     ]
 }
 ```
+
+
+
+- `/getCoreApplications` [POST]
+Retrieve lyst of Ecosystem Starknet applications
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+
+
+3. Return
+
+```
+{
+    'result': [
+        {
+            "application": "AlmanacNFT",
+            "application_short": "almanac",
+            "countFollowers": 0,
+            "description": "AlmanacNFT is a collection of 10.000 unique crypto trading days. Just pick a market, pick a date, and mint a day in crypto.",
+            "discord": "",
+            "github": "https://github.com/grillolepic/almanacNFT_cairo",
+            "isLive": 1,
+            "isTestnetLive": 0,
+            "medium": "",
+            "tags": "[\"nft\"]",
+            "twitter": "https://twitter.com/almanacNFT",
+            "website": "https://almanacNFT.xyz/"
+        },
+        ...
+    ]
+}
+```
