@@ -145,7 +145,6 @@ def get_wallet_ranking():
 #  Global Data Route  #
 #######################
 @app_routes.route('/getDailyData', methods=['POST'])
-@cache.cached(timeout=60)
 @require_appkey
 def get_daily_data():
     """
@@ -163,7 +162,6 @@ def get_daily_data():
 
 
 @app_routes.route('/getDailyTVLData', methods=['POST'])
-@cache.cached(timeout=60)
 @require_appkey
 def get_daily_tvl_data():
     """
@@ -178,7 +176,6 @@ def get_daily_tvl_data():
 
 
 @app_routes.route('/getDailyTransferData', methods=['POST'])
-@cache.cached(timeout=60)
 @require_appkey
 def get_daily_transfer_data():
     """
@@ -193,7 +190,6 @@ def get_daily_transfer_data():
 
 
 @app_routes.route('/getCumulativeMetricEvolution', methods=['POST'])
-@cache.cached(timeout=60)
 @require_appkey
 def get_cumulative_metric_evolution():
     """
@@ -208,7 +204,6 @@ def get_cumulative_metric_evolution():
 
 
 @app_routes.route('/getTokenTVLEvolution', methods=['POST'])
-@cache.cached(timeout=60)
 @require_appkey
 def get_token_tvl_evolution():
     """
@@ -222,7 +217,6 @@ def get_token_tvl_evolution():
     }, 200
 
 @app_routes.route('/getCummulativeTransferVolumeEvolution', methods=['POST'])
-@cache.cached(timeout=60)
 @require_appkey
 def get_cummulative_transfer_volume_evolution():
     """
