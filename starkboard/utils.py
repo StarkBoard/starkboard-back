@@ -129,6 +129,10 @@ class StarkboardDatabase():
             print(e)
             return None
 
+    #
+    # Insertion Blocks and Daily
+    #
+
     def insert_block_data(self, data):
         try:
             cursor = self._connection.cursor()
@@ -185,6 +189,81 @@ class StarkboardDatabase():
             print(e)
             return False
 
+
+    def insert_daily_data(self, data):
+        try:
+            cursor = self._connection.cursor()
+            sql_upsert_query = f"""INSERT INTO daily_data{self._mainnet_suffix}(
+                day, count_txs, count_new_wallets, count_new_contracts, count_transfers, total_fees, mean_fees, count_wallets_active, top_wallets_active
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
+                day=%s, count_txs=%s, count_new_wallets=%s, count_new_contracts=%s, count_transfers=%s, total_fees=%s, mean_fees=%s, count_wallets_active=%s, top_wallets_active=%s
+            """
+            inserted_block = (
+                data["day"], data["count_txs"], data["count_new_wallets"], data["count_new_contracts"], 
+                data["count_transfers"], data["total_fees"], data["mean_fees"], data["count_wallets_active"], json.dumps(data["top_wallets_active"]),
+                data["day"], data["count_txs"], data["count_new_wallets"], data["count_new_contracts"], 
+                data["count_transfers"], data["total_fees"], data["mean_fees"], data["count_wallets_active"], json.dumps(data["top_wallets_active"])
+            )
+            cursor.execute(sql_upsert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    def insert_daily_tvl_data(self, data):
+        try:
+            cursor = self._connection.cursor()
+            sql_upsert_query = f"""INSERT INTO daily_mints{self._mainnet_suffix}(
+                day, token, amount, avg_deposit, count_deposit, count_withdraw
+                ) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
+                day=%s, token=%s, amount=%s, avg_deposit=%s, count_deposit=%s, count_withdraw=%s
+            """
+            inserted_block = (
+                data["day"], data["token"], 
+                data["amount"], data["avg_deposit"], data["count_deposit"], data["count_withdraw"],
+                data["day"], data["token"], 
+                data["amount"], data["avg_deposit"], data["count_deposit"], data["count_withdraw"],
+            )
+            cursor.execute(sql_upsert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+
+    def insert_daily_transfers_data(self, data):
+        try:
+            cursor = self._connection.cursor()
+            sql_upsert_query = f"""INSERT INTO daily_transfers{self._mainnet_suffix}(
+                day, token, amount, avg_transfer, count_transfer, max_transfer
+                ) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
+                day=%s, token=%s, amount=%s, avg_transfer=%s, count_transfer=%s, max_transfer=%s
+            """
+            inserted_block = (
+                data["day"], data["token"], 
+                data["amount"], data["avg_transfer"], data["count_transfer"], data["max_transfer"],
+                data["day"], data["token"], 
+                data["amount"], data["avg_transfer"], data["count_transfer"], data["max_transfer"],
+            )
+            cursor.execute(sql_upsert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    ##
+    ## Insertion User data
+    ##
+
     def inserts_starkboard_og(self, data):
         try:
             cursor = self._connection.cursor()
@@ -215,6 +294,66 @@ class StarkboardDatabase():
             print(e)
             return False
 
+    ##
+    ## Insertion Ecosystem
+    ##
+
+    def insert_ecosystem_offchain(self, data):
+        try:	
+            cursor = self._connection.cursor()
+            sql_insert_query = """INSERT INTO ecosystem(
+                    application, application_short, isLive, isTestnetLive, 
+                    github, medium, twitter, website,
+                    discord, tags, countFollowers, description
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE
+                    application=%s, application_short=%s, isLive=%s, isTestnetLive=%s, 
+                    github=%s, medium=%s, twitter=%s, website=%s,
+                    discord=%s, tags=%s, countFollowers=%s, description=%s"""
+            inserted_app = (
+                data["application"], data["application_short"], 
+                data["isLive"], data["isTestnetLive"],
+                data["github"], data["medium"],
+                data["twitter"], data["website"],
+                data["discord"], data["tags"],
+                data["countFollowers"], data["description"],
+                data["application"], data["application_short"], 
+                data["isLive"], data["isTestnetLive"],
+                data["github"], data["medium"],
+                data["twitter"], data["website"],
+                data["discord"], data["tags"],
+                data["countFollowers"], data["description"]
+            )
+            cursor.execute(sql_insert_query, inserted_app)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    ##
+    ## Getters Ecosystem
+    ##
+
+    def get_ecosystem_offchain(self):
+        try:	
+            cursor = self._connection.cursor()
+            sql_get_query = """SELECT * FROM ecosystem"""
+            cursor.execute(sql_get_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    ##
+    ##Getters Blocks
+    ##
+
     def get_checkpoint_block(self):
         try:
             cursor = self._connection.cursor()
@@ -227,6 +366,11 @@ class StarkboardDatabase():
         except Exception as e:
             print(e)
             return False
+
+    ##
+    ## Getters aggregated
+    ##
+
 
     def get_daily_data_from_blocks(self):
         try:
@@ -258,7 +402,7 @@ class StarkboardDatabase():
             sql_select_query = f"""SELECT full_day as day,
                 GROUP_CONCAT(wallets_active SEPARATOR ',') as list_wallets_active
                 FROM block_data{self._mainnet_suffix}
-                WHERE full_day between DATE_SUB(now(),INTERVAL 1 WEEK) and now()
+                WHERE full_day between DATE_SUB(now(),INTERVAL 4 WEEK) and now()
                 GROUP BY full_day
                 ORDER BY full_day DESC"""
             cursor.execute(sql_select_query)
@@ -269,6 +413,10 @@ class StarkboardDatabase():
         except Exception as e:
             print(e)
             return False
+
+    ##
+    ## Delete Blocks
+    ##
 
     def delete_old_block_data(self, date):
         try:
@@ -342,80 +490,6 @@ class StarkboardDatabase():
             return res
         except Exception as e:
             print(e)
-            return False
-
-    ##
-    ## Insertors
-    ##
-
-    def insert_daily_data(self, data):
-        try:
-            cursor = self._connection.cursor()
-            sql_upsert_query = f"""INSERT INTO daily_data{self._mainnet_suffix}(
-                day, count_txs, count_new_wallets, count_new_contracts, count_transfers, total_fees, mean_fees, count_wallets_active, top_wallets_active
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
-                day=%s, count_txs=%s, count_new_wallets=%s, count_new_contracts=%s, count_transfers=%s, total_fees=%s, mean_fees=%s, count_wallets_active=%s, top_wallets_active=%s
-            """
-            inserted_block = (
-                data["day"], data["count_txs"], data["count_new_wallets"], data["count_new_contracts"], 
-                data["count_transfers"], data["total_fees"], data["mean_fees"], data["count_wallets_active"], json.dumps(data["top_wallets_active"]),
-                data["day"], data["count_txs"], data["count_new_wallets"], data["count_new_contracts"], 
-                data["count_transfers"], data["total_fees"], data["mean_fees"], data["count_wallets_active"], json.dumps(data["top_wallets_active"])
-            )
-            cursor.execute(sql_upsert_query, inserted_block)
-            self._connection.commit()
-            cursor.close()
-            return True
-        except Exception as e:
-            print(e)
-            self._connection = get_connection()
-            return False
-
-    def insert_daily_tvl_data(self, data):
-        try:
-            cursor = self._connection.cursor()
-            sql_upsert_query = f"""INSERT INTO daily_mints{self._mainnet_suffix}(
-                day, token, amount, avg_deposit, count_deposit, count_withdraw
-                ) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
-                day=%s, token=%s, amount=%s, avg_deposit=%s, count_deposit=%s, count_withdraw=%s
-            """
-            inserted_block = (
-                data["day"], data["token"], 
-                data["amount"], data["avg_deposit"], data["count_deposit"], data["count_withdraw"],
-                data["day"], data["token"], 
-                data["amount"], data["avg_deposit"], data["count_deposit"], data["count_withdraw"],
-            )
-            cursor.execute(sql_upsert_query, inserted_block)
-            self._connection.commit()
-            cursor.close()
-            return True
-        except Exception as e:
-            print(e)
-            self._connection = get_connection()
-            return False
-
-
-    def insert_daily_transfers_data(self, data):
-        try:
-            cursor = self._connection.cursor()
-            sql_upsert_query = f"""INSERT INTO daily_transfers{self._mainnet_suffix}(
-                day, token, amount, avg_transfer, count_transfer, max_transfer
-                ) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
-                day=%s, token=%s, amount=%s, avg_transfer=%s, count_transfer=%s, max_transfer=%s
-            """
-            inserted_block = (
-                data["day"], data["token"], 
-                data["amount"], data["avg_transfer"], data["count_transfer"], data["max_transfer"],
-                data["day"], data["token"], 
-                data["amount"], data["avg_transfer"], data["count_transfer"], data["max_transfer"],
-            )
-            cursor.execute(sql_upsert_query, inserted_block)
-            self._connection.commit()
-            cursor.close()
-            return True
-        except Exception as e:
-            print(e)
-            self._connection = get_connection()
             return False
 
     ###

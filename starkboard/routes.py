@@ -4,6 +4,7 @@ from starkboard.contracts import count_contract_deployed_current_block
 from starkboard.utils import StarkboardDatabase, Requester, require_appkey, generate_merkle_proof
 from starkboard.fees import get_block_fees
 from starkboard.user import whitelist, use_wallets_ranking
+from starkboard.ecosystem.fetch_application import get_core_ecosystem
 from datetime import date
 from cache import cache
 
@@ -144,6 +145,7 @@ def get_wallet_ranking():
 #  Global Data Route  #
 #######################
 @app_routes.route('/getDailyData', methods=['POST'])
+@cache.cached(timeout=60)
 @require_appkey
 def get_daily_data():
     """
@@ -161,6 +163,7 @@ def get_daily_data():
 
 
 @app_routes.route('/getDailyTVLData', methods=['POST'])
+@cache.cached(timeout=60)
 @require_appkey
 def get_daily_tvl_data():
     """
@@ -175,6 +178,7 @@ def get_daily_tvl_data():
 
 
 @app_routes.route('/getDailyTransferData', methods=['POST'])
+@cache.cached(timeout=60)
 @require_appkey
 def get_daily_transfer_data():
     """
@@ -189,6 +193,7 @@ def get_daily_transfer_data():
 
 
 @app_routes.route('/getCumulativeMetricEvolution', methods=['POST'])
+@cache.cached(timeout=60)
 @require_appkey
 def get_cumulative_metric_evolution():
     """
@@ -203,6 +208,7 @@ def get_cumulative_metric_evolution():
 
 
 @app_routes.route('/getTokenTVLEvolution', methods=['POST'])
+@cache.cached(timeout=60)
 @require_appkey
 def get_token_tvl_evolution():
     """
@@ -216,6 +222,7 @@ def get_token_tvl_evolution():
     }, 200
 
 @app_routes.route('/getCummulativeTransferVolumeEvolution', methods=['POST'])
+@cache.cached(timeout=60)
 @require_appkey
 def get_cummulative_transfer_volume_evolution():
     """
@@ -275,10 +282,32 @@ def get_estimate_fees():
             starknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
         actual_fees =  get_block_fees(None, starknet_node)["mean_fees"]
         return {
-            'res': actual_fees
+            'result': actual_fees
         }, 200
     except Exception as e:
         return {
             'error': e.message
         }, 400
-    
+
+
+#######################
+#  Ecosystem Route    #
+#######################
+
+@app_routes.route('/getCoreApplications', methods=['POST'])
+@cache.cached(timeout=60)
+@require_appkey
+def get_core_application():
+    """
+    Retrieve the list of core application on StarkNet and its info
+    """
+    try:
+        starkboard_db = StarkboardDatabase()
+        list_core_applications = get_core_ecosystem(starkboard_db)
+        return {
+            'result': list_core_applications
+        }, 200
+    except Exception as e:
+        return {
+            'error': e.message
+        }, 400
