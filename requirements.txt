@@ -19,3 +19,4 @@ starknet.py==0.5.2a0
 boto3==1.24.44
 pymysql==1.0.2
 pandas==1.4.3
+tweepy==4.10.1
