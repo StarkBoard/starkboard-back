@@ -333,6 +333,23 @@ class StarkboardDatabase():
             self._connection = get_connection()
             return False
 
+    def update_ecosystem_twitter_social(self, data):
+        try:	
+            cursor = self._connection.cursor()
+            sql_insert_query = """UPDATE ecosystem SET countFollowers=%s, countTweets=%s WHERE application=%s;"""
+            inserted_app = (
+                data["followers_count"], data["tweet_count"], 
+                data["application"]
+            )
+            cursor.execute(sql_insert_query, inserted_app)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
     ##
     ## Getters Ecosystem
     ##
@@ -343,6 +360,21 @@ class StarkboardDatabase():
             sql_get_query = """SELECT * FROM ecosystem"""
             cursor.execute(sql_get_query)
             res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    def get_ecosystem_twitter_handlers(self):
+        try:	
+            cursor = self._connection.cursor()
+            sql_get_query = """SELECT application, twitter FROM ecosystem ORDER BY countFollowers DESC"""
+            cursor.execute(sql_get_query)
+            res = cursor.fetchall()
+            res = [dict(app, twitter_handler=app.get('twitter').split('/')[-1]) for app in res]
             self._connection.commit()
             cursor.close()
             return res
@@ -748,5 +780,8 @@ def get_twitter_api_auth():
  
 def get_application_follower(name, api):
     user = api.get_user(username=name, user_fields="public_metrics")
-    print(user.data.public_metrics)
-    return user
+    try:
+        return user.data.public_metrics
+    except Exception as e:
+        print(e)
+        return None

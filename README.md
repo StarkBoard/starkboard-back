@@ -389,7 +389,7 @@ Retrieve Wallet Ranking (monthly) by number of TXs (most active)
             "count_txs": 0,
             "eth": 0.0,
             "wallet_address": "0x7c57808b9cea7130c44aab2f8ca6147b04408943b48c6d8c3c83eb8cfdd8c0b",
-            "weekly_tx": 236
+            "monthly_txs": 236
         },
         ...
     ]

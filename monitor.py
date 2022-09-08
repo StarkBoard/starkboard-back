@@ -1,25 +1,26 @@
-import os
-import argparse
 from dotenv import load_dotenv
 load_dotenv()
-from starkboard.utils import RepeatedTimer, StarkboardDatabase, Requester, chunks
-from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block, get_transfer_transactions, get_transfer_transactions_v2, get_transfer_transactions_in_block_v2
-from starkboard.user import count_wallet_deployed, get_wallet_address_deployed, get_active_wallets_in_block
-from starkboard.contracts import count_contract_deployed_in_block
-from starkboard.tokens import get_eth_total_supply, get_balance_of
-from starkboard.fees import get_block_fees
-import signal
-import asyncio
-from datetime import datetime
-import time
+from starkboard.utils import RepeatedTimer, StarkboardDatabase, get_twitter_api_auth, get_application_follower
 
 
 def monitor():
+    starkboard_db = StarkboardDatabase()
+    list_ecosystem = starkboard_db.get_ecosystem_twitter_handlers()
+    twitter_api = get_twitter_api_auth()
+    for app in list_ecosystem:
+        if app.get("twitter_handler"):
+            public_metrics = get_application_follower(app.get("twitter_handler"), twitter_api)
+            if not public_metrics:
+                continue
+            print(f'Retrieved Social metrics for {app.get("twitter_handler")}')
+            print(public_metrics)
+            updated_data = {
+                "application": app.get("application"),
+                "followers_count": public_metrics.get("followers_count"),
+                "tweet_count": public_metrics.get("tweet_count")
+            }
+            starkboard_db.update_ecosystem_twitter_social(updated_data)
 
-
-
-
-    return 
 
 
 if __name__ == '__main__':
