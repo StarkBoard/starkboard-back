@@ -6,7 +6,7 @@ from functools import reduce
 from dotenv import load_dotenv
 load_dotenv()
 from starkboard.utils import StarkboardDatabase
-
+from monitor import socials_metrics
 
 def get_block_data_by_date(db):
     daily_data = db.get_daily_data_from_blocks()
@@ -68,3 +68,6 @@ if __name__ == '__main__':
     get_block_mints_data_by_date(starkboard_db)
     get_block_transfers_data_by_date(starkboard_db)
     print("Mainnet indexed !")
+    print("OffChain Indexing....")
+    socials_metrics()
+    print("OffChain Indexing done !")

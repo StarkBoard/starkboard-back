@@ -3,7 +3,7 @@ load_dotenv()
 from starkboard.utils import RepeatedTimer, StarkboardDatabase, get_twitter_api_auth, get_application_follower
 
 
-def monitor():
+def socials_metrics():
     starkboard_db = StarkboardDatabase()
     list_ecosystem = starkboard_db.get_ecosystem_twitter_handlers()
     twitter_api = get_twitter_api_auth()
@@ -22,6 +22,5 @@ def monitor():
             starkboard_db.update_ecosystem_twitter_social(updated_data)
 
 
-
 if __name__ == '__main__':
-    monitor()
+    socials_metrics()
