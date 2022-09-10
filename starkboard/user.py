@@ -129,7 +129,7 @@ def fetch_wallets_ranking(db_main, db_test):
         nonce = get_nonce_of(address, network="mainnet")
         current_res = {
             "wallet_address": address,
-            "weekly_tx": wallets[address],
+            "monthly_txs": wallets[address],
             "eth": eth_balance,
             "count_txs": nonce
         }

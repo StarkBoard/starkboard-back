@@ -27,6 +27,9 @@ def update_core_ecosystem(db):
     print("Success !")
     return None
 
+
+
+
 def get_core_ecosystem(db):
     res = db.get_ecosystem_offchain()
     return res
