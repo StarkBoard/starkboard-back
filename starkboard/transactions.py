@@ -179,3 +179,20 @@ def get_transfer_transactions_v2(fromBlock, toBlock, starknet_node):
             else:
                 results[event["block_number"]] += 1
     return results
+
+
+def state_update(block_id="latest", starknet_node=None):
+    """
+    Retrieve the list of transactions hash from a given block number
+    """
+    if block_id != "latest":
+        params = {
+            "block_number": block_id
+        }
+    else:
+        params = block_id
+    r = starknet_node.post("", method="starknet_getStateUpdate", params=[params])
+    data = json.loads(r.text)
+    if 'error'in data:
+        return data['error']
+    return data["result"]['state_diff']
