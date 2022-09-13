@@ -8,6 +8,7 @@ from starkboard.user import count_wallet_deployed, get_wallet_address_deployed, 
 from starkboard.contracts import count_contract_deployed_in_block
 from starkboard.tokens import get_eth_total_supply, get_balance_of
 from starkboard.fees import get_block_fees
+from monitor import monitor_deployed_contracts
 import signal
 import asyncio
 from datetime import datetime
@@ -32,7 +33,7 @@ def fetch_checkpoint(db):
 
 last_checked_block = int(os.environ.get("STARTING_BLOCK_FETCHER", 0))
 
-def block_tx_fetcher(block_id, node):
+def block_tx_fetcher(block_id, node, db):
     current_block = transactions_in_block(block_id, starknet_node=node)
     if 'code' in current_block:
         print("Still same block...")
@@ -51,7 +52,7 @@ def block_tx_fetcher(block_id, node):
     print(f'> {fees["total_fees"]} Total fees in block.')
     print(f'> {fees["mean_fees"]} Average fees in block.')
     print(f'> {active_wallets["count_active_wallets"]} Active wallets found in block.')
-
+    monitor_deployed_contracts(node, db, current_block)
     return current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block["block_number"]
 
 
@@ -59,7 +60,7 @@ def block_aggreg_fetcher(db, node):
     global last_checked_block
     print(f'Checking next block {last_checked_block + 1}')
     try:
-        current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block_number = block_tx_fetcher(last_checked_block + 1, node)
+        current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block_number = block_tx_fetcher(last_checked_block + 1, node, db)
         if not current_block:
             print("Connection timed out, retrying...")
             return True

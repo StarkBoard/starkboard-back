@@ -12,6 +12,19 @@ starknet_events = Requester("http://starknet.events/api/v1/get_events", headers=
 
 transaction_executed_key = ["0x5ad857f66a5b55f1301ff1ed7e098ac6d4433148f0b72ebc4a2945ab85ad53"]
 transfer_key = ["0x99cd8bde557814842a3121e8ddfd433a539b8c9f14bf31ebf108d12e6196e9"]
+swap_key = ["0xe316f0d9d2a3affa97de1d99bb2aac0538e2666d0d8545545ead241ef0ccab"]
+mint_key = ["0x34e55c1cd55f1338241b50d352f0e91c7e4ffad0e4271d64eb347589ebdfd16"]
+approval_key = ["0x134692b230b9e1ffa39098904722134159652b09c5bc41d88d6698779d228ff"]
+burn_key = ["0x243e1de00e8a6bc1dfa3e950e6ade24c52e4a25de4dee7fb5affe918ad1e744"]
+
+list_event_keys = {
+    "Transaction": transaction_executed_key,
+    "Transfer": transfer_key,
+    "Swap": swap_key,
+    "Mint": mint_key,
+    "Approval": approval_key,
+    "Burn": burn_key
+}
 
 
 def transactions_in_block(block_id="latest", starknet_node=None):
@@ -82,7 +95,6 @@ def get_transfer_transactions_in_block_v2(block, starknet_node):
     events = list(filter(lambda event: event['keys'] == transfer_key, events))
     count_transfer = len(events)
     while not data["is_last_page"]:
-        print(count_transfer)
         params["filter"]["page_number"] += 1
         r = starknet_node.post("", method="starknet_getEvents", params=params)
         data = json.loads(r.text)["result"]

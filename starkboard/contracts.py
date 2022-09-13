@@ -1,13 +1,36 @@
 import os
 import json
 from starkboard.utils import Requester
+from starkboard.transactions import list_event_keys
 
-ERC20_STD = [["name", "symbol", "decimals", "balanceOf", "totalSupply", "approve", "transfer"], "ERC20"]
-ERC721_STD = [["name", "symbol", "tokenURI", "approve", "ownerOf"], "ERC721"]
-ERC1155_STD = [["balanceOf", "balanceOfBatch"], "ERC1155"]
-ACCOUNT_STD = [["__execute__", "supportsInterface"], "ACCOUNT"]
+ERC20_STD = [
+    ["name", "symbol", "decimals", "balanceOf", "totalSupply", "approve", "transfer"], 
+    "ERC20",
+    [list_event_keys["Transfer"], list_event_keys["Approval"], list_event_keys["Mint"], list_event_keys["Burn"]]
+]
+ERC721_STD = [
+    ["name", "symbol", "tokenURI", "approve", "ownerOf"], 
+    "ERC721",
+    [list_event_keys["Transfer"], list_event_keys["Approval"], list_event_keys["Mint"], list_event_keys["Burn"]],
+]
+ERC1155_STD = [
+    ["balanceOf", "balanceOfBatch"],
+    "ERC1155",
+    [list_event_keys["Transfer"], list_event_keys["Approval"], list_event_keys["Mint"], list_event_keys["Burn"]]
+]
+ACCOUNT_STD = [
+    ["__execute__", "supportsInterface"], 
+    "Account",
+    [list_event_keys["Transfer"]]
+]
 
-class_hashes = []
+class_hashes_types = {
+    "ERC20": ERC20_STD,
+    "ERC20-LP": ERC20_STD,
+    "ERC721": ERC721_STD,
+    "ERC1155": ERC1155_STD,
+    "Account": ACCOUNT_STD
+}
 
 def count_contract_deployed_current_block(starknet_node, starknet_gateway):
     """
@@ -55,24 +78,25 @@ def get_class_program(class_hash, starknet_node=None):
     return data["result"]['program']
 
 
-def classify_hash_contract(class_hash, list_functions):
+def classify_hash_contract(list_functions):
     for typed in [ERC20_STD, ERC1155_STD, ERC721_STD, ACCOUNT_STD]:
         if all(a in list_functions for a in typed[0]):
             if typed[1] == "ERC20": 
                 is_liquidity_pool = list(filter(lambda x: "swap" in x, list_functions))
                 if is_liquidity_pool:
-                    print(f'{class_hash} IS A ERC20-LP')
-                    return "ERC20-LP"
+                    return "ERC20-LP", typed[2]+list_event_keys["Swap"]
                 else:
-                    print(f'{class_hash} IS A {typed[1]}')
-                    return typed[1]
+                    return typed[1], typed[2]
             else:
-                print(f'{class_hash} IS A {typed[1]}')
-                return typed[1]
-    #print(f'{class_hash} IS OTHER TYPE, FUNCTIONS IS : ')
-    #print(list_functions)
-    return "UNKNOWN"
+                return typed[1], typed[2]
+    return None, None
 
+def get_hash_contract_info(type):
+    event_keys = class_hashes_types[type][2]
+    if "LP" in type:
+        return type, event_keys+list_event_keys["Swap"]
+    else:
+        return type, event_keys
 
 def index_deployed_contract(db):
 

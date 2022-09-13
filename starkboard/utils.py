@@ -111,6 +111,7 @@ class StarkboardDatabase():
     Starkboard MySQL Database handler
     """
     def __init__(self, newtork='testnet'):
+        self.network = newtork
         if newtork == "mainnet":
             self._mainnet_suffix = "_mainnet"
         else:
@@ -296,6 +297,46 @@ class StarkboardDatabase():
             return False
 
     ##
+    ## Insert Contracts
+    ##
+
+    def inserts_contract_hash(self, data):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """INSERT INTO contract_class(
+                    class_hash, type, network
+                ) VALUES (%s,%s,%s)"""
+            inserted_block = (data["class_hash"], data["type"], self.network)
+            cursor.execute(sql_insert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    def inserts_contract_type(self, data):
+        try:
+            print(data)
+            cursor = self._connection.cursor()
+            sql_insert_query = """INSERT INTO ecosystem_contracts(
+                    contract_address, application, event_keys, contract_type, class_hash, network
+                ) VALUES (%s,%s,%s,%s,%s,%s)"""
+            inserted_block = (
+                data["contract_address"], data["application"], json.dumps(data["event_keys"]), 
+                data["type"], data["class_hash"], self.network
+            )
+            cursor.execute(sql_insert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    ##
     ## Insertion Ecosystem
     ##
 
@@ -384,7 +425,26 @@ class StarkboardDatabase():
             return False
 
     ##
-    ##Getters Blocks
+    ## Getters Contracts
+    ##
+
+    def get_contract_hash(self, class_hash):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """SELECT * from contract_class WHERE class_hash=%s and network=%s"""
+            inserted_block = (class_hash, self.network)
+            cursor.execute(sql_insert_query, inserted_block)
+            res = cursor.fetchone()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    ##
+    ## Getters Blocks
     ##
 
     def get_checkpoint_block(self):
@@ -403,7 +463,6 @@ class StarkboardDatabase():
     ##
     ## Getters aggregated
     ##
-
 
     def get_daily_data_from_blocks(self):
         try:
