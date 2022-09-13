@@ -2,6 +2,7 @@ import os
 import base64
 import json
 import gzip
+from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 from starkboard.utils import Requester, StarkboardDatabase, get_twitter_api_auth, get_application_follower
@@ -28,6 +29,7 @@ def socials_metrics():
 
 
 def monitor_deployed_contracts(staknet_node, db, block_transactions):
+    print(block_transactions.get('timestamp'))
     deploy_txs = [tx for tx in block_transactions["transactions"] if tx["type"] == "DEPLOY"]
     if deploy_txs:
         for tx in deploy_txs:
@@ -58,7 +60,7 @@ def monitor_deployed_contracts(staknet_node, db, block_transactions):
                         "event_keys": event_keys,
                         "class_hash": class_hash,
                         "type": deployed_contract_type,
-                        "deployed_at": block_transactions.get('timestamp')
+                        "deployed_at": datetime.fromtimestamp(block_transactions.get('timestamp')).strftime('%Y-%m-%d %H:%M:%S')
                     }
                     db.insert_contract_type(newly_contract_found)
                     print(f'✨ New Contract Deployed Identified ! {tx.get("contract_address")} has been identified as an {deployed_contract_type}')
