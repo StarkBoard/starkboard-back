@@ -29,7 +29,6 @@ def socials_metrics():
 
 
 def monitor_deployed_contracts(staknet_node, db, block_transactions):
-    print(block_transactions.get('timestamp'))
     deploy_txs = [tx for tx in block_transactions["transactions"] if tx["type"] == "DEPLOY"]
     if deploy_txs:
         for tx in deploy_txs:
