@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 if __name__ == '__main__':
-    starknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
-    db = StarkboardDatabase("testnet")
-    for block in range(250000, 300000):
+    starknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
+    db = StarkboardDatabase("mainnet")
+    for block in range(3800, 4000):
         block_transactions = transactions_in_block(block, starknet_node=starknet_node)
         monitor_deployed_contracts(starknet_node, db, block_transactions)

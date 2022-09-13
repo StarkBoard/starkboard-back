@@ -32,7 +32,10 @@ def get_block_fees(block_id, starknet_node=None):
         except Exception as e:
             print(e)
             pass
-    mean_fees = total_fees / len(transactions)
+    if len(transactions) > 0:
+        mean_fees = total_fees / len(transactions)
+    else:
+        mean_fees = 0
     fees_params = {
         "total_fees": total_fees,
         "mean_fees": mean_fees
