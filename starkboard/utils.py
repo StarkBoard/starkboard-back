@@ -318,7 +318,6 @@ class StarkboardDatabase():
 
     def insert_contract_type(self, data):
         try:
-            print(data)
             cursor = self._connection.cursor()
             sql_insert_query = """INSERT INTO ecosystem_contracts(
                     contract_address, application, event_keys, contract_type, class_hash, deployed_at, network
