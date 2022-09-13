@@ -58,7 +58,7 @@ def monitor_deployed_contracts(staknet_node, db, block_transactions):
                         "event_keys": event_keys,
                         "class_hash": class_hash,
                         "type": deployed_contract_type,
-                        "deployed_at": tx.get('timestamp')
+                        "deployed_at": block_transactions.get('timestamp')
                     }
                     db.insert_contract_type(newly_contract_found)
                     print(f'✨ New Contract Deployed Identified ! {tx.get("contract_address")} has been identified as an {deployed_contract_type}')
