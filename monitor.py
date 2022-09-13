@@ -51,15 +51,16 @@ def monitor_deployed_contracts(staknet_node, db, block_transactions):
                             "class_hash": class_hash,
                             "type": deployed_contract_type
                         }
-                        db.inserts_contract_hash(newly_hash_found)
+                        db.insert_contract_hash(newly_hash_found)
                     newly_contract_found = {
                         "contract_address": tx.get("contract_address"),
                         "application": "Unknown",
                         "event_keys": event_keys,
                         "class_hash": class_hash,
-                        "type": deployed_contract_type
+                        "type": deployed_contract_type,
+                        "deployed_at": tx.get('timestamp')
                     }
-                    db.inserts_contract_type(newly_contract_found)
+                    db.insert_contract_type(newly_contract_found)
                     print(f'✨ New Contract Deployed Identified ! {tx.get("contract_address")} has been identified as an {deployed_contract_type}')
             except Exception as e:
                 print(e)
