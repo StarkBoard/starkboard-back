@@ -376,10 +376,10 @@ class StarkboardDatabase():
     def update_ecosystem_twitter_social(self, data):
         try:	
             cursor = self._connection.cursor()
-            sql_insert_query = """UPDATE ecosystem SET countFollowers=%s, countTweets=%s WHERE application=%s;"""
+            sql_insert_query = """UPDATE ecosystem SET countFollowers=%s, countTweets=%s, profile_picture_url=%s WHERE application=%s;"""
             inserted_app = (
                 data["followers_count"], data["tweet_count"], 
-                data["application"]
+                data["profile_picture_url"], data["application"]
             )
             cursor.execute(sql_insert_query, inserted_app)
             self._connection.commit()
@@ -818,28 +818,3 @@ def generate_proof_helper(level, index, proof):
                 proof.append(level[index-1])
 
     return generate_proof_helper(next_level, index_parent, proof)
-
-
-#
-# Twitter Off Chain
-#
-
-def get_twitter_api_auth():
-    """
-    # Authenticate to Twitter
-    """
-    bearer_token = os.environ.get('TWITTER_BEARER')
-    api = tweepy.Client(bearer_token)
-    try:
-        print('Twitter Successful Authentication')
-    except:
-        print('Twitter Failed authentication')
-    return api
- 
-def get_application_follower(name, api):
-    user = api.get_user(username=name, user_fields="public_metrics")
-    try:
-        return user.data.public_metrics
-    except Exception as e:
-        print(e)
-        return None

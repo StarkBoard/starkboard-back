@@ -1,18 +1,15 @@
 import os
 from starkboard.utils import StarkboardDatabase, Requester
-from starkboard.ecosystem.fetch_application import update_core_ecosystem
-from starkboard.transactions import transactions_in_block, state_update
+from starkboard.transactions import transactions_in_block
 from monitor import monitor_deployed_contracts
-
-import base64
-import gzip
-import json
+from starkboard.ecosystem.social import socials_metrics
 from dotenv import load_dotenv
 load_dotenv()
 
 if __name__ == '__main__':
-    starknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
-    db = StarkboardDatabase("mainnet")
-    for block in range(4700, 4800):
-        block_transactions = transactions_in_block(block, starknet_node=starknet_node)
-        monitor_deployed_contracts(starknet_node, db, block_transactions)
+    socials_metrics()
+    #starknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
+    #db = StarkboardDatabase("mainnet")
+    #for block in range(4900, 4950):
+    #    block_transactions = transactions_in_block(block, starknet_node=starknet_node)
+    #    monitor_deployed_contracts(starknet_node, db, block_transactions)

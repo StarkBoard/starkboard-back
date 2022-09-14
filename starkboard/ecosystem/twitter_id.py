@@ -2,7 +2,7 @@ import tweepy
 from dotenv import load_dotenv
 import os
 import json
-from auth import auth_client
+from auth import get_twitter_apiv2_auth
 
 load_dotenv()
 BEARER_TOKEN = os.getenv('TWITTER_BEARER_TOKEN')
@@ -25,7 +25,7 @@ def update_missing_twitter_ids():
 		ecosystem = json.load(file)
 
 	twitter_usernames = get_missing_twitter_id_twitter_usernames(ecosystem)
-	client = auth_client(BEARER_TOKEN)
+	client = get_twitter_apiv2_auth(BEARER_TOKEN)
 	i = 1
 	while len(twitter_usernames) >= (i-1)*100:
 		users = client.get_users(usernames=twitter_usernames[(i-1)*100:i*100])
