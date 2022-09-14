@@ -150,6 +150,7 @@ def get_daily_data():
     """
     Retrieve daily data
     """
+    print(request.remote_addr)
     data = request.get_json()
     starkboard_db = StarkboardDatabase(data.get('network'))
     if data.get('daily_only', False):

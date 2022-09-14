@@ -7,9 +7,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 if __name__ == '__main__':
-    socials_metrics()
-    #starknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
-    #db = StarkboardDatabase("mainnet")
-    #for block in range(4900, 4950):
-    #    block_transactions = transactions_in_block(block, starknet_node=starknet_node)
-    #    monitor_deployed_contracts(starknet_node, db, block_transactions)
+    #socials_metrics()
+    starknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
+    db = StarkboardDatabase("testnet")
+    for block in range(329995, 333539):#320000
+        block_transactions = transactions_in_block(block, starknet_node=starknet_node)
+        monitor_deployed_contracts(starknet_node, db, block_transactions)
