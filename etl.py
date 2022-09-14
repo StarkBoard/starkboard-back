@@ -6,7 +6,7 @@ from functools import reduce
 from dotenv import load_dotenv
 load_dotenv()
 from starkboard.utils import StarkboardDatabase
-from monitor import socials_metrics
+from starkboard.ecosystem.social import socials_metrics
 
 def get_block_data_by_date(db):
     daily_data = db.get_daily_data_from_blocks()
