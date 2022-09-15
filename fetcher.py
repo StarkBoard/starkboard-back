@@ -53,7 +53,7 @@ def block_tx_fetcher(block_id, node, db):
     print(f'> {fees["mean_fees"]} Average fees in block.')
     print(f'> {active_wallets["count_active_wallets"]} Active wallets found in block.')
     get_declared_class_in_block(current_block['transactions'], node, db)
-    monitor_deployed_contracts(current_block['transations'], current_block['timestamp'], node, db)
+    monitor_deployed_contracts(current_block['transactions'], current_block['timestamp'], node, db)
     return current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block["block_number"]
 
 
