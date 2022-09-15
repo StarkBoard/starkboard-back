@@ -37,9 +37,14 @@ WALLET_KEYS = {
 #################################
 
 ERC20_STD = [
-    ["name", "symbol", "decimals", "balanceOf", "totalSupply", "approve", "transfer"], 
+    ["name", "symbol", "decimals", "balanceOf", "totalSupply", "approve", "Transfer"], 
     "ERC20",
     [LIST_EVENT_KEYS["Transfer"], LIST_EVENT_KEYS["Approval"], LIST_EVENT_KEYS["Mint"], LIST_EVENT_KEYS["Burn"]]
+]
+ERC20_LP_STD = [
+    ["name", "symbol", "balanceOf", "totalSupply", "Approval", "Transfer", "Swap"], 
+    "ERC20-LP",
+    [LIST_EVENT_KEYS["Transfer"], LIST_EVENT_KEYS["Approval"], LIST_EVENT_KEYS["Mint"], LIST_EVENT_KEYS["Burn"], LIST_EVENT_KEYS["Swap"]]
 ]
 ERC721_STD = [
     ["name", "symbol", "tokenURI", "approve", "ownerOf"], 
@@ -61,18 +66,12 @@ ROUTER_STD = [
     "Router",
     []
 ]
-JEDISWAPLP_STD = [
-    ["Swap", "Mint", "IJediSwapCallee"], 
-    "Router",
-    [LIST_EVENT_KEYS["Mint"], LIST_EVENT_KEYS["Burn"], LIST_EVENT_KEYS["Swap"], LIST_EVENT_KEYS["Sync"]]
-]
 
-EVENT_KEYS = [JEDISWAPLP_STD, ERC20_STD, ERC1155_STD, ERC721_STD, ACCOUNT_STD, ROUTER_STD]
+EVENT_KEYS = [ERC20_LP_STD, ERC20_STD, ERC1155_STD, ERC721_STD, ACCOUNT_STD, ROUTER_STD]
 
 CLASS_HASH_TYPE = {
     "ERC20": ERC20_STD,
     "ERC20-LP": ERC20_STD,
-    "ERC20-LP-JediSwap": JEDISWAPLP_STD,
     "Router": ROUTER_STD,
     "ERC721": ERC721_STD,
     "ERC1155": ERC1155_STD,

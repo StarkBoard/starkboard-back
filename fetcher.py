@@ -6,7 +6,7 @@ from starkboard.utils import RepeatedTimer, StarkboardDatabase, Requester
 from starkboard.events import get_events
 from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block
 from starkboard.user import count_wallet_deploy_in_block, get_active_wallets_in_block
-from starkboard.contracts import count_contract_deployed_in_block
+from starkboard.contracts import count_contract_deployed_in_block, get_declared_class_in_block
 from starkboard.tokens import get_eth_total_supply, get_balance_of
 from starkboard.fees import get_fees_in_block
 from monitor import monitor_deployed_contracts
@@ -35,10 +35,10 @@ last_checked_block = int(os.environ.get("STARTING_BLOCK_FETCHER", 0))
 def block_tx_fetcher(block_id, node, db):
     print("---")
     current_block = transactions_in_block(block_id, starknet_node=node)
-    events = get_events(block_id, starknet_node=node)
     if 'code' in current_block:
         print("Still same block...")
         return None, None, None, None, None, None, block_id - 1
+    events = get_events(block_id, starknet_node=node)
     wallet_deployed = count_wallet_deploy_in_block(events)
     contract_deployed = count_contract_deployed_in_block(current_block['transactions'])
     transfer_executed = get_transfer_transactions_in_block(events)
@@ -52,7 +52,8 @@ def block_tx_fetcher(block_id, node, db):
     print(f'> {fees["total_fees"]} Total fees in block.')
     print(f'> {fees["mean_fees"]} Average fees in block.')
     print(f'> {active_wallets["count_active_wallets"]} Active wallets found in block.')
-    monitor_deployed_contracts(node, db, current_block)
+    get_declared_class_in_block(current_block['transactions'], node, db)
+    monitor_deployed_contracts(current_block['transations'], current_block['timestamp'], node, db)
     return current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block["block_number"]
 
 

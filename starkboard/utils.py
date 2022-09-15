@@ -304,9 +304,9 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_insert_query = """INSERT INTO contract_class(
-                    class_hash, type, network
-                ) VALUES (%s,%s,%s)"""
-            inserted_block = (data["class_hash"], data["type"], self.network)
+                    class_hash, type, abi, event_names, event_keys, network
+                ) VALUES (%s,%s,%s,%s,%s,%s)"""
+            inserted_block = (data["class_hash"], data["type"], data["abi"], data["event_names"], data["event_keys"], self.network)
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
             cursor.close()
@@ -320,11 +320,11 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_insert_query = """INSERT INTO ecosystem_contracts(
-                    contract_address, application, event_keys, contract_type, class_hash, deployed_at, network
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s)"""
+                    contract_address, application, event_keys, contract_type, class_hash, abi, deployed_at, network
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
             inserted_block = (
                 data["contract_address"], data["application"], json.dumps(data["event_keys"]), 
-                data["type"], data["class_hash"], data['deployed_at'], self.network
+                data["type"], data["class_hash"], data['abi'], data['deployed_at'], self.network
             )
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
