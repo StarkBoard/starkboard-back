@@ -323,7 +323,7 @@ class StarkboardDatabase():
                     contract_address, application, event_keys, contract_type, class_hash, abi, deployed_at, network
                 ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
             inserted_block = (
-                data["contract_address"], data["application"], json.dumps(data["event_keys"]), 
+                data["contract_address"], data["application"], data["event_keys"], 
                 data["type"], data["class_hash"], data['abi'], data['deployed_at'], self.network
             )
             cursor.execute(sql_insert_query, inserted_block)
