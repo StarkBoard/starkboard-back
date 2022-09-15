@@ -1,28 +1,10 @@
-import os
 import json
-from starkboard.utils import Requester
 
-if os.environ.get("IS_MAINNET") == "True":
-    staknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
-else:
-    staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
-
-def get_block_fees(block_id, starknet_node=None):
+def get_fees_in_block(block_txs, starknet_node=None):
     """
     Retrieve the fees of a block
     """
-    if block_id is None:
-        r = starknet_node.post("", method="starknet_blockNumber")
-        block_id = json.loads(r.text)["result"]
-    params = {
-        "block_number": block_id
-    }
-    r = starknet_node.post("", method="starknet_getBlockWithTxs", params=[params])
-    data = json.loads(r.text)
-    if 'error'in data:
-        return data['error']
-    block_txs = data["result"]["transactions"]
-    transactions = [tx for tx in block_txs if tx["type"] != "DEPLOY"]
+    transactions = [tx for tx in block_txs if tx["type"] not in ["DEPLOY", "DECLARE"]]
     total_fees = 0
     for transaction in transactions:
         try:

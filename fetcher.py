@@ -2,17 +2,16 @@ import os
 import argparse
 from dotenv import load_dotenv
 load_dotenv()
-from starkboard.utils import RepeatedTimer, StarkboardDatabase, Requester, chunks
-from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block, get_transfer_transactions, get_transfer_transactions_v2, get_transfer_transactions_in_block_v2
-from starkboard.user import count_wallet_deployed, get_wallet_address_deployed, get_active_wallets_in_block
+from starkboard.utils import RepeatedTimer, StarkboardDatabase, Requester
+from starkboard.events import get_events
+from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block
+from starkboard.user import count_wallet_deploy_in_block, get_active_wallets_in_block
 from starkboard.contracts import count_contract_deployed_in_block
 from starkboard.tokens import get_eth_total_supply, get_balance_of
-from starkboard.fees import get_block_fees
+from starkboard.fees import get_fees_in_block
 from monitor import monitor_deployed_contracts
 import signal
-import asyncio
 from datetime import datetime
-import time
 
 
 parser = argparse.ArgumentParser()
@@ -35,14 +34,15 @@ last_checked_block = int(os.environ.get("STARTING_BLOCK_FETCHER", 0))
 
 def block_tx_fetcher(block_id, node, db):
     current_block = transactions_in_block(block_id, starknet_node=node)
+    events = get_events(block_id, starknet_node=node)
     if 'code' in current_block:
         print("Still same block...")
         return None, None, None, None, None, None, block_id - 1
-    wallet_deployed = count_wallet_deployed(wallet_type="All", fromBlock=block_id, toBlock=block_id, starknet_node=node)
-    contract_deployed = count_contract_deployed_in_block(current_block)
-    transfer_executed = get_transfer_transactions_in_block_v2(block_id, starknet_node=node)
-    fees = get_block_fees(block_id, starknet_node=node)
-    active_wallets = get_active_wallets_in_block(block_id, node)
+    wallet_deployed = count_wallet_deploy_in_block(events)
+    contract_deployed = count_contract_deployed_in_block(current_block['transactions'])
+    transfer_executed = get_transfer_transactions_in_block(events)
+    fees = get_fees_in_block(current_block['transactions'], starknet_node=node)
+    active_wallets = get_active_wallets_in_block(current_block['transactions'])
     print("---")
     print(f'Fetched Block {current_block["block_number"]} at {datetime.fromtimestamp(current_block["timestamp"])}')
     print(f'> {len(current_block["transactions"])} Txs found in block.')
@@ -102,15 +102,6 @@ async def ethereum_stats():
 ######################################################################
 #            User Data                                               #
 ######################################################################
-
-
-def user_wallets_storage(node):
-    list_wallets = get_wallet_address_deployed(wallet_type="All", fromBlock=270000, toBlock=285030, starknet_node=node)
-    with open('testnet_wallets.txt', 'w') as f:
-        for wallet in list_wallets:
-            f.write(f"{wallet}\n")
-    return list_wallets
-
 
 async def get_wallets_balance():
     with open("testnet_wallets.txt") as file:
