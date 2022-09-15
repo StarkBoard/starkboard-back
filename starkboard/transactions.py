@@ -1,6 +1,6 @@
 import json
 from starkboard.events import filter_events
-from starkboard.constants import TRANSFER_KEY
+from starkboard.constants import TRANSFER_KEY, SWAP_KEY
 
 ################################1
 #  Available Transactions Keys  #
@@ -30,6 +30,16 @@ def get_transfer_transactions_in_block(events):
         "count_transfer": count_transfer
     }
 
+
+def get_swap_info_in_block(events):
+    """
+    Retrieve the list of swaps events in a given block
+    """
+    swap_events = filter_events(events, SWAP_KEY)
+    count_swaps= len(swap_events)
+    return {
+        "count_swap": count_swaps
+    }
 
 
 def get_transfer_transactions(fromBlock, toBlock, starknet_node):

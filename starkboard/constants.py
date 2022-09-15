@@ -42,7 +42,7 @@ ERC20_STD = [
     [LIST_EVENT_KEYS["Transfer"], LIST_EVENT_KEYS["Approval"], LIST_EVENT_KEYS["Mint"], LIST_EVENT_KEYS["Burn"]]
 ]
 ERC20_LP_STD = [
-    ["name", "symbol", "balanceOf", "totalSupply", "Approval", "Transfer", "Swap"], 
+    ["name", "symbol", "totalSupply", "Approval", "Transfer", "Swap"], 
     "ERC20-LP",
     [LIST_EVENT_KEYS["Transfer"], LIST_EVENT_KEYS["Approval"], LIST_EVENT_KEYS["Mint"], LIST_EVENT_KEYS["Burn"], LIST_EVENT_KEYS["Swap"]]
 ]
@@ -71,7 +71,7 @@ EVENT_KEYS = [ERC20_LP_STD, ERC20_STD, ERC1155_STD, ERC721_STD, ACCOUNT_STD, ROU
 
 CLASS_HASH_TYPE = {
     "ERC20": ERC20_STD,
-    "ERC20-LP": ERC20_STD,
+    "ERC20-LP": ERC20_LP_STD,
     "Router": ROUTER_STD,
     "ERC721": ERC721_STD,
     "ERC1155": ERC1155_STD,
