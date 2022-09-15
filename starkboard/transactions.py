@@ -16,6 +16,7 @@ swap_key = ["0xe316f0d9d2a3affa97de1d99bb2aac0538e2666d0d8545545ead241ef0ccab"]
 mint_key = ["0x34e55c1cd55f1338241b50d352f0e91c7e4ffad0e4271d64eb347589ebdfd16"]
 approval_key = ["0x134692b230b9e1ffa39098904722134159652b09c5bc41d88d6698779d228ff"]
 burn_key = ["0x243e1de00e8a6bc1dfa3e950e6ade24c52e4a25de4dee7fb5affe918ad1e744"]
+sync_key = ["0xe14a408baf7f453312eec68e9b7d728ec5337fbdf671f917ee8c80f3255232"]
 
 list_event_keys = {
     "Transaction": transaction_executed_key,
@@ -23,7 +24,8 @@ list_event_keys = {
     "Swap": swap_key,
     "Mint": mint_key,
     "Approval": approval_key,
-    "Burn": burn_key
+    "Burn": burn_key,
+    "Sync": sync_key
 }
 
 

@@ -5,7 +5,7 @@ import gzip
 from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
-from starkboard.contracts import get_class_program, classify_hash_contract, get_hash_contract_info
+from starkboard.contracts import get_class_program, classify_hash_contract, get_hash_contract_info, get_application_name
 
 
 def monitor_deployed_contracts(staknet_node, db, block_transactions):
@@ -34,9 +34,10 @@ def monitor_deployed_contracts(staknet_node, db, block_transactions):
                                 "type": deployed_contract_type
                             }
                             db.insert_contract_hash(newly_hash_found)
+                        app_name = get_application_name(deployed_contract_type)
                         newly_contract_found = {
                             "contract_address": tx.get("contract_address"),
-                            "application": "Unknown",
+                            "application": app_name,
                             "event_keys": event_keys,
                             "class_hash": class_hash,
                             "type": deployed_contract_type,
