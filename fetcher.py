@@ -33,6 +33,7 @@ def fetch_checkpoint(db):
 last_checked_block = int(os.environ.get("STARTING_BLOCK_FETCHER", 0))
 
 def block_tx_fetcher(block_id, node, db):
+    print("---")
     current_block = transactions_in_block(block_id, starknet_node=node)
     events = get_events(block_id, starknet_node=node)
     if 'code' in current_block:
@@ -43,7 +44,6 @@ def block_tx_fetcher(block_id, node, db):
     transfer_executed = get_transfer_transactions_in_block(events)
     fees = get_fees_in_block(current_block['transactions'], starknet_node=node)
     active_wallets = get_active_wallets_in_block(current_block['transactions'])
-    print("---")
     print(f'Fetched Block {current_block["block_number"]} at {datetime.fromtimestamp(current_block["timestamp"])}')
     print(f'> {len(current_block["transactions"])} Txs found in block.')
     print(f'> {wallet_deployed["deployed_wallets"]} User Wallet created in block.')
