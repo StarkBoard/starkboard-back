@@ -98,7 +98,6 @@ def get_declared_class(class_hash, node, db):
         inputs = json_code[f'{k}.Args'].get('members')
         inputs = [{"name": member, "type": member_type['cairo_type'].split('.')[-1]} 
         for member, member_type in inputs.items()]
-        print(json_code[f'{k}.Return'])
         if json_code[f'{k}.Return'].get('cairo_type'):
             outputs = json_code[f'{k}.Return']['cairo_type'][1:len(json_code[f'{k}.Return']['cairo_type'])-1]
         else:
