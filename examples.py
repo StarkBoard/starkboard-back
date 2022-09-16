@@ -10,7 +10,7 @@ if __name__ == '__main__':
     starknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
     db = StarkboardDatabase("testnet")
     #get_declared_class("0xd0e183745e9dae3e4e78a8ffedcce0903fc4900beace4e0abf192d4c202da3", starknet_node, db)
-    for block in range(300000, 330000):
+    for block in range(330000, 340000):
         block_transactions = transactions_in_block(block, starknet_node=starknet_node)
         monitor_deployed_contracts(block_transactions['transactions'], block_transactions['timestamp'], starknet_node, db)
         declared_tx = [tx for tx in block_transactions['transactions'] if tx["type"] == "DECLARE"]

@@ -68,7 +68,7 @@ ERC4626_STD = {
 ACCOUNT_STD = {
     "functions": ["__execute__", "supportsInterface"], 
     "name": "Account",
-    "event_names": ["Transfer"]
+    "event_names": []
 }
 ROUTER_STD = {
     "functions": ["Router", "swap"], 
