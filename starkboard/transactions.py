@@ -1,5 +1,5 @@
 import json
-from starkboard.events import filter_events
+from starkboard.events import filter_events, store_swap_events
 from starkboard.constants import TRANSFER_KEY, SWAP_KEY
 
 ################################1
@@ -37,6 +37,7 @@ def get_swap_info_in_block(events):
     """
     swap_events = filter_events(events, SWAP_KEY)
     count_swaps= len(swap_events)
+    store_swap_events(swap_events)
     return {
         "count_swap": count_swaps
     }

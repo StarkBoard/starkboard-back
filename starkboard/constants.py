@@ -53,12 +53,12 @@ ERC20_LP_STD = {
 ERC721_STD = {
     "functions": ["name", "symbol", "tokenURI", "approve", "ownerOf"], 
     "name": "ERC721",
-    "event_names": ["Transfer", "Approval", "Mint", "Burn"],
+    "event_names": ["Transfer", "Approval"],
 }
 ERC1155_STD = {
     "functions": ["balanceOf", "balanceOfBatch"],
     "name": "ERC1155",
-    "event_names": ["Transfer", "Approval", "Mint", "Burn"]
+    "event_names": ["TransferBatch", "ApprovalForAll"]
 }
 ERC4626_STD = {
     "functions": ["deposit", "withdraw"],

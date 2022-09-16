@@ -31,3 +31,11 @@ def get_events(block_number, starknet_node):
 def filter_events(events, keys):
     filtered_events = list(filter(lambda event: event['keys'][0] in keys, events))
     return filtered_events
+
+def store_swap_events(swap_events):
+    print(swap_events)
+    #for event in swap_events:
+        
+
+
+    return
