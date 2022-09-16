@@ -11,6 +11,13 @@ def monitor_deployed_contracts(block_transactions, timestamp, starknet_node, db)
             for attempt in range(10):
                 try:
                     class_hash = tx.get('class_hash')
+                    if class_hash in ["0x10455c752b86932ce552f2b0fe81a880746649b9aee7e0d842bf3f52378f9f8", 
+                        "0x25ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918", 
+                        "0x3131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e", 
+                        "0x1ca349f9721a2bf05012bb475b404313c497ca7d6d5f80c03e98ff31e9867f5", 
+                        "0x71c3c99f5cf76fc19945d4b8b7d34c7c5528f22730d56192b50c6bbfd338a64",
+                        "0x4d1f4cf4ef520c768a326d34f919227e1f075effda532f57cbaec6a1228db88"]:
+                        break
                     contract_class = db.get_contract_hash(class_hash)
                     if not contract_class:
                         contract_class = get_declared_class(class_hash, starknet_node, db)
