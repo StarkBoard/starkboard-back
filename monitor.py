@@ -19,7 +19,8 @@ def monitor_deployed_contracts(block_transactions, timestamp, starknet_node, db)
                         "0x71c3c99f5cf76fc19945d4b8b7d34c7c5528f22730d56192b50c6bbfd338a64",
                         "0x4d1f4cf4ef520c768a326d34f919227e1f075effda532f57cbaec6a1228db88",
                         "0xa69700a89b1fa3648adff91c438b79c75f7dcb0f4798938a144cce221639d6",
-                        "0x4572af1cd59b8b91055ebb78df8f1d11c59f5270018b291366ba4585d4cdff0"]:
+                        "0x4572af1cd59b8b91055ebb78df8f1d11c59f5270018b291366ba4585d4cdff0",
+                        "0x5624a24901a556ec1f24594b6014948b72e5f6cc9c1d84594d5a0fb1b614917"]:
                         break
                     contract_class = db.get_contract_hash(class_hash)
                     if not contract_class:
