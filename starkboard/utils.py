@@ -305,8 +305,12 @@ class StarkboardDatabase():
             cursor = self._connection.cursor()
             sql_insert_query = """INSERT INTO contract_class(
                     class_hash, type, abi, event_names, event_keys, network
-                ) VALUES (%s,%s,%s,%s,%s,%s)"""
-            inserted_block = (data["class_hash"], data["type"], data["abi"], data["event_names"], data["event_keys"], self.network)
+                ) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE
+                    class_hash=%s, type=%s, abi=%s, event_names=%s, event_keys=%s, network=%s"""
+            inserted_block = (
+                data["class_hash"], data["type"], data["abi"], data["event_names"], data["event_keys"], self.network,
+                data["class_hash"], data["type"], data["abi"], data["event_names"], data["event_keys"], self.network
+            )
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
             cursor.close()

@@ -1,7 +1,7 @@
 import json
 import gzip
 import base64
-from starkboard.constants import LIST_EVENT_KEYS, EVENT_KEYS, CLASS_HASH_TYPE, APP_NAME
+from starkboard.constants import LIST_EVENT_KEYS, CONTRACT_STANDARDS, APP_NAME
 
 
 def count_contract_deployed_current_block(starknet_node, starknet_gateway):
@@ -45,10 +45,8 @@ def get_declared_class_in_block(block_txs, node, db):
         base64_bytes = prog.encode('utf-8')
         message_bytes = base64.b64decode(base64_bytes)
         json_code = json.loads(gzip.decompress(message_bytes).decode()).get('identifiers')
-        main_functions = list(filter(lambda x: '__main__' in x, list(json_code.keys())))
-        final_functions = set(list(map(lambda x: x.split('.')[1], main_functions)))
         event_names = [key.split('.')[-2] for key in list(json_code) if "emit_event" in key and not "syscalls.emit_event" in key]
-        abi_keys = [(k, v.get('decorators')) for k, v in json_code.items() if "__main__" in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators'))]
+        abi_keys = [(k, v.get('decorators')) for k, v in json_code.items() if "__wrappers__" in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators'))]
         abi = []
         for (k, decorators) in abi_keys:
             inputs = json_code[f'{k}.Args'].get('members')
@@ -72,7 +70,7 @@ def get_declared_class_in_block(block_txs, node, db):
                 abi_part["stateMutability"] = "view"
             abi.append(abi_part)
         event_keys = [LIST_EVENT_KEYS.get(event_name) for event_name in event_names if LIST_EVENT_KEYS.get(event_name)]
-        class_type = get_contract_class_type(final_functions)
+        class_type = get_contract_class_type(abi_keys, event_names)
         if not class_type:
             class_type = "UNKNOWN"
         class_object = {
@@ -89,10 +87,8 @@ def get_declared_class(class_hash, node, db):
     base64_bytes = prog.encode('utf-8')
     message_bytes = base64.b64decode(base64_bytes)
     json_code = json.loads(gzip.decompress(message_bytes).decode()).get('identifiers')
-    main_functions = list(filter(lambda x: '__main__' in x, list(json_code.keys())))
-    final_functions = set(list(map(lambda x: x.split('.')[1], main_functions)))
-    event_names = [key.split('.')[-2] for key in list(json_code) if "emit_event" in key and not "syscalls.emit_event" in key]
-    abi_keys = [(k, v.get('decorators')) for k, v in json_code.items() if "__main__" in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators'))]
+    event_names = [key.split('.')[-2] for key in list(json_code) if key.endswith(".emit_event") and "__main__" not in key.split('.')[-2] and not "syscalls.emit_event" in key]
+    abi_keys = [(k, v.get('decorators')) for k, v in json_code.items() if "__wrappers__" in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators'))]
     abi = []
     for (k, decorators) in abi_keys:
         inputs = json_code[f'{k}.Args'].get('members')
@@ -116,7 +112,7 @@ def get_declared_class(class_hash, node, db):
             abi_part["stateMutability"] = "view"
         abi.append(abi_part)
     event_keys = [LIST_EVENT_KEYS.get(event_name) for event_name in event_names if LIST_EVENT_KEYS.get(event_name)]
-    class_type = get_contract_class_type(final_functions)
+    class_type = get_contract_class_type(abi_keys, event_names)
     if not class_type:
         class_type = "UNKNOWN"
     class_object = {
@@ -140,24 +136,12 @@ def get_class_program(class_hash, starknet_node=None):
         return data['error']
     return data["result"]['program']
 
-def get_contract_class_type(list_functions):
-    for typed in EVENT_KEYS:
-        if all(a in list_functions for a in typed[0]):
-            return typed[1]
+def get_contract_class_type(abi_keys, event_names):
+    list_functions = list(map(lambda x: x[0].split('.')[-1], abi_keys))
+    for typed in CONTRACT_STANDARDS:
+        if all(a in event_names for a in typed["event_names"]) and all(a in list_functions for a in typed["functions"]):
+            return typed["name"]
     return None
-
-def get_class_type(list_functions):
-    for typed in EVENT_KEYS:
-        if all(a in list_functions for a in typed[0]):
-            return typed[1], typed[2]
-    return None, None
-
-def get_hash_contract_info(type):
-    event_keys = CLASS_HASH_TYPE[type][2]
-    if type == "ERC20-LP":
-        return type, event_keys+LIST_EVENT_KEYS["Swap"]
-    else:
-        return type, event_keys
 
 def get_application_name(type):
     return APP_NAME.get(type, "Unknown")

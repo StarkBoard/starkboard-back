@@ -10,6 +10,8 @@ MINT_KEY = ["0x34e55c1cd55f1338241b50d352f0e91c7e4ffad0e4271d64eb347589ebdfd16"]
 BURN_KEY = ["0x243e1de00e8a6bc1dfa3e950e6ade24c52e4a25de4dee7fb5affe918ad1e744"]
 SYNC_KEY = ["0xe14a408baf7f453312eec68e9b7d728ec5337fbdf671f917ee8c80f3255232"]
 PAIRCREATED_KEY = ["0x19437bf1c5c394fc8509a2e38c9c72c152df0bac8be777d4fc8f959ac817189"]
+DEPOSIT_KEY = ["0x9149d2123147c5f43d258257fef0b7b969db78269369ebcf5ebb9eef8592f2"]
+WITHDRAW_KEY = ["0x17f87ab38a7f75a63dc465e10aadacecfca64c44ca774040b039bfb004e3367"]
 
 LIST_EVENT_KEYS = {
     "Transaction": TRANSACTION_EXECUTED_KEY,
@@ -19,7 +21,9 @@ LIST_EVENT_KEYS = {
     "Mint": MINT_KEY,
     "Burn": BURN_KEY,
     "Sync": SYNC_KEY,
-    "PairCreated": PAIRCREATED_KEY
+    "PairCreated": PAIRCREATED_KEY,
+    "Deposit": DEPOSIT_KEY,
+    "Withdraw": WITHDRAW_KEY
 }
 
 #################################
@@ -36,38 +40,43 @@ WALLET_KEYS = {
 #  Available Standard Contrats  #
 #################################
 
-ERC20_STD = [
-    ["name", "symbol", "decimals", "balanceOf", "totalSupply", "approve", "Transfer"], 
-    "ERC20",
-    [LIST_EVENT_KEYS["Transfer"], LIST_EVENT_KEYS["Approval"], LIST_EVENT_KEYS["Mint"], LIST_EVENT_KEYS["Burn"]]
-]
-ERC20_LP_STD = [
-    ["name", "symbol", "totalSupply", "Approval", "Transfer", "Swap"], 
-    "ERC20-LP",
-    [LIST_EVENT_KEYS["Transfer"], LIST_EVENT_KEYS["Approval"], LIST_EVENT_KEYS["Mint"], LIST_EVENT_KEYS["Burn"], LIST_EVENT_KEYS["Swap"]]
-]
-ERC721_STD = [
-    ["name", "symbol", "tokenURI", "approve", "ownerOf"], 
-    "ERC721",
-    [LIST_EVENT_KEYS["Transfer"], LIST_EVENT_KEYS["Approval"], LIST_EVENT_KEYS["Mint"], LIST_EVENT_KEYS["Burn"]],
-]
-ERC1155_STD = [
-    ["balanceOf", "balanceOfBatch"],
-    "ERC1155",
-    [LIST_EVENT_KEYS["Transfer"], LIST_EVENT_KEYS["Approval"], LIST_EVENT_KEYS["Mint"], LIST_EVENT_KEYS["Burn"]]
-]
-ACCOUNT_STD = [
-    ["__execute__", "supportsInterface"], 
-    "Account",
-    [LIST_EVENT_KEYS["Transfer"]]
-]
-ROUTER_STD = [
-    ["Router", "swap"], 
-    "Router",
-    []
-]
+ERC20_STD = {
+    "functions": ["name", "symbol", "decimals", "balanceOf", "totalSupply", "approve", "transfer"], 
+    "name": "ERC20",
+    "event_names": ["Transfer", "Approval"]
+}
+ERC20_LP_STD = {
+    "functions": ["name", "symbol", "decimals", "transfer", "approve"], 
+    "name": "ERC20-LP",
+    "event_names": ["Transfer", "Approval", "Swap"]
+}
+ERC721_STD = {
+    "functions": ["name", "symbol", "tokenURI", "approve", "ownerOf"], 
+    "name": "ERC721",
+    "event_names": ["Transfer", "Approval", "Mint", "Burn"],
+}
+ERC1155_STD = {
+    "functions": ["balanceOf", "balanceOfBatch"],
+    "name": "ERC1155",
+    "event_names": ["Transfer", "Approval", "Mint", "Burn"]
+}
+ERC4626_STD = {
+    "functions": ["deposit", "withdraw"],
+    "name": "ERC4626",
+    "event_names": ["Deposit",  "Withdraw"]
+}
+ACCOUNT_STD = {
+    "functions": ["__execute__", "supportsInterface"], 
+    "name": "Account",
+    "event_names": ["Transfer"]
+}
+ROUTER_STD = {
+    "functions": ["Router", "swap"], 
+    "name": "Router",
+    "event_names": []
+}
 
-EVENT_KEYS = [ERC20_LP_STD, ERC20_STD, ERC1155_STD, ERC721_STD, ACCOUNT_STD, ROUTER_STD]
+CONTRACT_STANDARDS = [ERC20_LP_STD, ERC4626_STD, ERC20_STD, ERC1155_STD, ERC721_STD, ACCOUNT_STD, ROUTER_STD]
 
 CLASS_HASH_TYPE = {
     "ERC20": ERC20_STD,
@@ -75,6 +84,7 @@ CLASS_HASH_TYPE = {
     "Router": ROUTER_STD,
     "ERC721": ERC721_STD,
     "ERC1155": ERC1155_STD,
+    "ERC5626": ERC4626_STD,
     "Account": ACCOUNT_STD
 }
 
