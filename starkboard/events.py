@@ -51,21 +51,22 @@ def store_swap_events(timestamp, swap_events, starknet_node, db, pool):
             event_fees = get_fees_in_tx(tx_hash, starknet_node)
             token_in, token_info_in, amount_in, token_out, token_info_out, amount_out = get_swap_amount_info(event["data"][1:len(event["data"])-1], pool_info[pair_swapped])
             print('-------')
-            print(f'[{block_number}] : Swapped pool {pair_swapped} by {user[:20]}...')
+            print(tx_hash)
+            print(f'[{block_number}] : Swapped pool {pair_swapped} by {user} on {sender}')
             print(f'    > {to_unit(amount_in, token_info_in.get("decimals"))} {token_info_in.get("name")} for {to_unit(amount_out, token_info_in.get("decimals"))} {token_info_out.get("name")}')
-            print(f'    > User paid {event_fees} WEI of fees ({round(to_unit(event_fees, 18), 6)} $ETH).')
+            print(f'    > User paid {event_fees} WEI of fees')
             event_data = {
                 "timestamp": datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S'),
                 "full_day": datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d'),
                 "block_number": block_number,
                 "contract_address": pair_swapped,
-                "router_address": sender,
                 "wallet_address": user,
                 "event_key": event_key,
-                "total_fee": event_fees,
+                "total_fee": to_unit(event_fees, 18),
                 "data": json.dumps({
                     "amount_in": to_unit(amount_in, token_info_in.get("decimals")),
-                    "amount_out": to_unit(amount_in, token_info_out.get("decimals")),
+                    "amount_out": to_unit(amount_out, token_info_out.get("decimals")),
+                    "router_address": sender
                 })
             }
             db.insert_events(event_data)

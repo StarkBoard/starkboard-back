@@ -30,7 +30,6 @@ def get_transfer_transactions_in_block(events):
         "count_transfer": count_transfer
     }
 
-
 def get_swap_info_in_block(timestamp, events, starknet_node, db, pool):
     """
     Retrieve the list of swaps events in a given block

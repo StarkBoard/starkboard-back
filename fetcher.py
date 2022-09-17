@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from starkboard.utils import RepeatedTimer, StarkboardDatabase, Requester
 from starkboard.events import get_events
-from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block
+from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block, get_swap_info_in_block
 from starkboard.user import count_wallet_deploy_in_block, get_active_wallets_in_block
 from starkboard.contracts import count_contract_deployed_in_block, get_declared_class_in_block
 from starkboard.tokens import get_eth_total_supply, get_balance_of
@@ -54,6 +54,7 @@ def block_tx_fetcher(block_id, node, db):
     print(f'> {active_wallets["count_active_wallets"]} Active wallets found in block.')
     get_declared_class_in_block(current_block['transactions'], node, db)
     monitor_deployed_contracts(current_block['transactions'], current_block['timestamp'], node, db)
+    get_swap_info_in_block(current_block["timestamp"], events, node, db)
     return current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block["block_number"]
 
 
