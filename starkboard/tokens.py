@@ -1,10 +1,8 @@
 import os
 import json
-from starkboard.utils import Requester
-from datetime import datetime, time, timedelta
+from starkboard.utils import Requester, decimal_to_hex
 from starknet_py.contract import Contract
 from starknet_py.net.full_node_client import FullNodeClient
-
 from starknet_py.net.networks import TESTNET, MAINNET
 from starknet_py.cairo.felt import decode_shortstring
 from starknet_py.net.account.account_client import AccountClient
@@ -32,6 +30,21 @@ token_addresses = {
     "USDC": "0x005a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426"
 }
 
+async def insert_token_info(token_address, client, db):
+    contract = Contract(address=int(token_address, 16), abi=abi, client=client)
+    (name,) = await contract.functions["name"].call()
+    (symbol,) = await contract.functions["symbol"].call()
+    (decimals,) = await contract.functions["decimals"].call()
+    data = {
+        "contract_address": token_address,
+        "view_info": {
+            "name": bytearray.fromhex(hex(name)[2:]).decode(),
+            "symbol": bytearray.fromhex(hex(symbol)[2:]).decode(),
+            "decimals": decimals
+        }
+    }
+    db.insert_contract_view_info(data)
+    return data.get('view_info')
 
 async def get_eth_total_supply(network="testnet"):
     """

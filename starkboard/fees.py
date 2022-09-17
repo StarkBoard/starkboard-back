@@ -24,3 +24,15 @@ def get_fees_in_block(block_txs, starknet_node=None):
     }
     return fees_params
     
+
+def get_fees_in_tx(tx_hash, starknet_node=None):
+    """
+    Retrieve the fees of a block
+    """
+    try:
+        actual_fee_request = starknet_node.post("", method="starknet_getTransactionReceipt", params=[tx_hash])
+        data_tx = json.loads(actual_fee_request.text)
+        return int(data_tx["result"]["actual_fee"], 16)
+    except Exception as e:
+        print(e)
+        pass

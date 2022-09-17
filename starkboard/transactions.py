@@ -31,13 +31,13 @@ def get_transfer_transactions_in_block(events):
     }
 
 
-def get_swap_info_in_block(events, starknet_node, db):
+def get_swap_info_in_block(timestamp, events, starknet_node, db, pool):
     """
     Retrieve the list of swaps events in a given block
     """
     swap_events = filter_events(events, SWAP_KEY)
     count_swaps= len(swap_events)
-    store_swap_events(swap_events, starknet_node, db)
+    store_swap_events(timestamp, swap_events, starknet_node, db, pool)
     return {
         "count_swap": count_swaps
     }

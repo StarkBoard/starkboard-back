@@ -36,6 +36,9 @@ def decimal_to_hex(decimal: int):
 def hex_string_to_decimal(hex_string: str):
     return int(hex_string, 16)
 
+def to_unit(value, decimal):
+    return value / 10 ** decimal
+
 class Requester:
     """
     Custom API Request module
@@ -519,6 +522,22 @@ class StarkboardDatabase():
             self._connection = get_connection()
             return False
 
+    def insert_contract_view_info(self, data):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """UPDATE ecosystem_contracts SET view_info=%s WHERE contract_address=%s AND network=%s"""
+            inserted_block = (
+                json.dumps(data['view_info']), data['contract_address'], self.network
+            )
+            cursor.execute(sql_insert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
     #
     # Getters
     #
@@ -562,6 +581,34 @@ class StarkboardDatabase():
             self._connection.commit()
             cursor.close()
             return res
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    #################################
+    ##         Events Data          #
+    #################################
+
+    #
+    # Inserts
+    #
+
+    def insert_events(self, data):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """INSERT INTO contract_data(
+                    timestamp, full_day, contract_address, block_number, wallet_address, total_fee, event_key, data, network
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+            inserted_block = (
+                data["timestamp"], data["full_day"], data["contract_address"], 
+                data["block_number"], data["wallet_address"], data['total_fee'], 
+                data['event_key'], data['data'], self.network
+            )
+            cursor.execute(sql_insert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
         except Exception as e:
             print(e)
             self._connection = get_connection()
@@ -910,6 +957,20 @@ def get_swap_amount_info(amounts, pool_info):
     amounts = np.array(amounts)
     amount_index_in, amount_index_out = np.flatnonzero(amounts != '0x0')
     if amount_index_in == 0 and amount_index_out == 6:
-        return pool_info["token0"], hex_string_to_decimal(amounts[amount_index_in]), pool_info["token1"], hex_string_to_decimal(amounts[amount_index_out])
+        return (
+            pool_info["token0"], 
+            pool_info["token0_info"], 
+            hex_string_to_decimal(amounts[amount_index_in]), 
+            pool_info["token1"], 
+            pool_info["token1_info"],
+            hex_string_to_decimal(amounts[amount_index_out])
+        )
     else:
-        return pool_info["token1"], hex_string_to_decimal(amounts[amount_index_in]), pool_info["token0"], hex_string_to_decimal(amounts[amount_index_out])
+        return (
+            pool_info["token1"], 
+            pool_info["token1_info"], 
+            hex_string_to_decimal(amounts[amount_index_in]), 
+            pool_info["token0"], 
+            pool_info["token0_info"], 
+            hex_string_to_decimal(amounts[amount_index_out])
+        )

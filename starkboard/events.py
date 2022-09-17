@@ -1,7 +1,9 @@
 import json
 import numpy as np
-from starkboard.utils import get_swap_amount_info
+from datetime import datetime
+from starkboard.utils import get_swap_amount_info, to_unit
 from starkboard.contracts import get_contract_info, get_pool_info
+from starkboard.fees import get_fees_in_tx
 
 def get_events(block_number, starknet_node):
     """
@@ -28,35 +30,46 @@ def get_events(block_number, starknet_node):
         r = starknet_node.post("", method="starknet_getEvents", params=params)
         data = json.loads(r.text)["result"]
         events += data["events"]
-    print(f'{len(events)} events fetched.')
     return events
 
 def filter_events(events, keys):
     filtered_events = list(filter(lambda event: event['keys'][0] in keys, events))
     return filtered_events
 
-def store_swap_events(swap_events, starknet_node, db):
+def store_swap_events(timestamp, swap_events, starknet_node, db, pool):
     pool_contracts = list(set(map(lambda event: event["from_address"], swap_events)))
-    pool_info = {contract_address: get_pool_info(contract_address, starknet_node, db) for contract_address in pool_contracts}
-    print(pool_info)
+    pool_info = {contract_address: get_pool_info(contract_address, starknet_node, db, pool) for contract_address in pool_contracts}
     for event in swap_events:
         try:
             assert len(event["data"]) == 10
             block_number = event["block_number"]
+            event_key = event["keys"][0]
+            tx_hash = event["transaction_hash"]
             pair_swapped = event["from_address"]
             sender = event["data"][0]
             user = event["data"][-1]
-            token_in, amount_in, token_out, amount_out = get_swap_amount_info(event["data"][1:len(event["data"])-1], pool_info[pair_swapped])
-
-            #Store Swap Event
-            #Get Volume
-            #Get Fees
+            event_fees = get_fees_in_tx(tx_hash, starknet_node)
+            token_in, token_info_in, amount_in, token_out, token_info_out, amount_out = get_swap_amount_info(event["data"][1:len(event["data"])-1], pool_info[pair_swapped])
             print('-------')
-            print(f'[{block_number}] : Swapped pool {pair_swapped[:9]}... by {user[:9]}...')
-            print(f'    > {amount_in} {token_in} for {amount_out} {token_out}')
-
+            print(f'[{block_number}] : Swapped pool {pair_swapped} by {user[:20]}...')
+            print(f'    > {to_unit(amount_in, token_info_in.get("decimals"))} {token_info_in.get("name")} for {to_unit(amount_out, token_info_in.get("decimals"))} {token_info_out.get("name")}')
+            print(f'    > User paid {event_fees} WEI of fees ({round(to_unit(event_fees, 18), 6)} $ETH).')
+            event_data = {
+                "timestamp": datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S'),
+                "full_day": datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d'),
+                "block_number": block_number,
+                "contract_address": pair_swapped,
+                "router_address": sender,
+                "wallet_address": user,
+                "event_key": event_key,
+                "total_fee": event_fees,
+                "data": json.dumps({
+                    "amount_in": to_unit(amount_in, token_info_in.get("decimals")),
+                    "amount_out": to_unit(amount_in, token_info_out.get("decimals")),
+                })
+            }
+            db.insert_events(event_data)
         except:
-            print(f'[❌ NOT STANDARDIZED]Swap From Contract : {event["from_address"]} at {event["block_number"]}')
-            print(event["data"])
+            print(f'[❌ NOT STANDARDIZED  {event["block_number"]}] From Contract : {event["from_address"]}')
             continue
     return

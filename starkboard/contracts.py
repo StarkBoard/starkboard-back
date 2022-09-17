@@ -3,10 +3,11 @@ import gzip
 import base64
 import asyncio
 from datetime import datetime
+from starkboard.tokens import insert_token_info
 from starkboard.constants import LIST_EVENT_KEYS, CONTRACT_STANDARDS, APP_NAME
-from starknet_py.net.networks import TESTNET, MAINNET
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.contract import Contract
+from starkboard.utils import decimal_to_hex
 
 
 def count_contract_deployed_current_block(starknet_node, starknet_gateway):
@@ -223,25 +224,60 @@ def get_contract_info(contract_address, starknet_node, db):
         contract_info = insert_contract_info(contract_address, starknet_node, db)
     return contract_info
 
-def get_pool_info(contract_address, starknet_node, db):
-    print(contract_address)
-    client = FullNodeClient(starknet_node.base_url, db.network)
-    contract_info = get_contract_info(contract_address, starknet_node, db)
-    contract = Contract(address=int(contract_address, 16), abi=json.loads(contract_info.get('abi')), client=client)
-    loop = asyncio.get_event_loop()
+def get_pool_info(contract_address, starknet_node, db, loop):
     try:
-        print(loop.run_until_complete(contract.functions["token0"].call()))
-        #print(loop.run_until_complete(contract.functions["token1"].call()))
-    finally:
-        loop.close()
-    token1_address = "0x0"
-    token0_address : "0x0"
-    pool_info = {
-        "token0": token0_address,
-        "token1": token1_address
+        client = FullNodeClient(starknet_node.base_url, db.network)
+        contract_info = get_contract_info(contract_address, starknet_node, db)
+        if contract_info.get('view_info'):
+            view_info = json.loads(contract_info.get('view_info'))
+            token0_address = view_info.get('token0')
+            token1_address = view_info.get('token1')
+        else:
+            contract = Contract(address=int(contract_address, 16), abi=json.loads(contract_info.get('abi')), client=client)
+            token0_address, token1_address = loop.run_until_complete(get_pool_tokens(contract, db))
+        token0 = get_contract_info(token0_address, starknet_node, db)
+        token1 = get_contract_info(token1_address, starknet_node, db)
+        if token0.get('view_info'):
+            token0_info = json.loads(token0.get('view_info'))
+        else:
+            token0_info = loop.run_until_complete(insert_token_info(token0_address, client, db))
+        if token1.get('view_info'):
+            token1_info = json.loads(token1.get('view_info'))
+        else:
+            token1_info = loop.run_until_complete(insert_token_info(token1_address, client, db))
+        pool_info = {
+            "token0": token0_address,
+            "token0_info": token0_info,
+            "token1": token1_address,
+            "token1_info": token1_info
+        }
+        return pool_info
+    except:
+        print(f'Contract {contract_address} is not at Standard.')
+        return {}
+
+async def get_pool_tokens(contract, db):
+    (name,) = await contract.functions["name"].call()
+    (symbol,) = await contract.functions["symbol"].call()
+    (decimals,) = await contract.functions["decimals"].call()
+    token0_handler = list(filter(lambda function_key: "token0" in function_key.lower(), contract.functions))[0]
+    token1_handler = list(filter(lambda function_key: "token1" in function_key.lower(), contract.functions))[0]
+    (token0_address,) = await contract.functions[token0_handler].call()
+    (token1_address,) = await contract.functions[token1_handler].call()
+    token0_address = decimal_to_hex(token0_address)
+    token1_address = decimal_to_hex(token1_address)
+    data = {
+        "contract_address": decimal_to_hex(contract.address),
+        "view_info": {
+            "name": bytearray.fromhex(hex(name)[2:]).decode(),
+            "symbol": bytearray.fromhex(hex(symbol)[2:]).decode(),
+            "decimals": decimals,
+            "token0": token0_address,
+            "token1": token1_address
+        }
     }
-    print(pool_info)
-    return pool_info
+    db.insert_contract_view_info(data)
+    return token0_address, token1_address
 
 def index_deployed_contract(db):
     return {}
