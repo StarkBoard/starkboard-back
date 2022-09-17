@@ -1,7 +1,12 @@
 import json
 import gzip
 import base64
+import asyncio
+from datetime import datetime
 from starkboard.constants import LIST_EVENT_KEYS, CONTRACT_STANDARDS, APP_NAME
+from starknet_py.net.networks import TESTNET, MAINNET
+from starknet_py.net.full_node_client import FullNodeClient
+from starknet_py.contract import Contract
 
 
 def count_contract_deployed_current_block(starknet_node, starknet_gateway):
@@ -46,20 +51,20 @@ def get_declared_class_in_block(block_txs, node, db):
         message_bytes = base64.b64decode(base64_bytes)
         json_code = json.loads(gzip.decompress(message_bytes).decode()).get('identifiers')
         event_names = [key.split('.')[-2] for key in list(json_code) if "emit_event" in key and not "syscalls.emit_event" in key]
-        abi_keys = [(k, v.get('decorators')) for k, v in json_code.items() if "__wrappers__" in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators'))]
+        abi_keys = [(k, v.get('decorators')) for k, v in json_code.items() if "__main__" in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators'))]
         abi = []
         for (k, decorators) in abi_keys:
             inputs = json_code[f'{k}.Args'].get('members')
             inputs = [{"name": member, "type": member_type['cairo_type'].split('.')[-1]} 
             for member, member_type in inputs.items()]
             if json_code[f'{k}.Return'].get('cairo_type'):
-                outputs = json_code[f'{k}.Return']['cairo_type'][1:len(json_code[f'{k}.Return']['cairo_type'])-1]
+                outputs = [json_code[f'{k}.Return']['cairo_type'][1:len(json_code[f'{k}.Return']['cairo_type'])-1]]
             else:
                 outputs = []
-            if outputs:
+            if outputs == ['']:
                 outputs = []
             else:
-                outputs = [{"name": v.split(':')[0], "type": v.split(':')[1].split('.')[-1]} for v in outputs]
+                outputs = [{"name": v.split(':')[0].replace(' ', ''), "type": v.split(':')[1].split('.')[-1]} for v in outputs]
             abi_part = {
                 "inputs": inputs,
                 "name": k.split('.')[-1],
@@ -88,20 +93,20 @@ def get_declared_class(class_hash, node, db):
     message_bytes = base64.b64decode(base64_bytes)
     json_code = json.loads(gzip.decompress(message_bytes).decode()).get('identifiers')
     event_names = [key.split('.')[-2] for key in list(json_code) if key.endswith(".emit_event") and "__main__" not in key.split('.')[-2] and not "syscalls.emit_event" in key]
-    abi_keys = [(k, v.get('decorators')) for k, v in json_code.items() if "__wrappers__" in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators'))]
+    abi_keys = [(k, v.get('decorators')) for k, v in json_code.items() if "__main__" in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators'))]
     abi = []
     for (k, decorators) in abi_keys:
         inputs = json_code[f'{k}.Args'].get('members')
         inputs = [{"name": member, "type": member_type['cairo_type'].split('.')[-1]} 
         for member, member_type in inputs.items()]
         if json_code[f'{k}.Return'].get('cairo_type'):
-            outputs = json_code[f'{k}.Return']['cairo_type'][1:len(json_code[f'{k}.Return']['cairo_type'])-1]
+            outputs = [json_code[f'{k}.Return']['cairo_type'][1:len(json_code[f'{k}.Return']['cairo_type'])-1]]
         else:
             outputs = []
-        if outputs:
+        if outputs == ['']:
             outputs = []
         else:
-            outputs = [{"name": v.split(':')[0], "type": v.split(':')[1].split('.')[-1]} for v in outputs]
+            outputs = [{"name": v.split(':')[0].replace(' ', ''), "type": v.split(':')[1].split('.')[-1]} for v in outputs]
         abi_part = {
             "inputs": inputs,
             "name": k.split('.')[-1],
@@ -143,8 +148,52 @@ def get_contract_class_type(abi_keys, event_names):
             return typed["name"]
     return None
 
-def get_application_name(type):
-    return APP_NAME.get(type, "Unknown")
+def insert_contract_info(contract_address, starknet_node, db):
+    params = contract_address
+    r = starknet_node.post("", method="starknet_getClassHashAt", params=["pending", params])
+    data = json.loads(r.text)
+    if 'error'in data:
+        return data['error']
+    contract_class = db.get_contract_hash(data["result"])
+    if not contract_class:
+        contract_class = get_declared_class(data["result"], starknet_node, db)
+    newly_contract_found = {
+        "contract_address": contract_address,
+        "application": "Unknown",
+        "event_keys": contract_class.get("event_keys", "[]"),
+        "abi": contract_class.get("abi", "[]"),
+        "class_hash": data["result"],
+        "type": contract_class.get('type'),
+        "deployed_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }
+    db.insert_contract(newly_contract_found)
+    return newly_contract_found
+
+def get_contract_info(contract_address, starknet_node, db):
+    contract_info = db.get_contract(contract_address)
+    if not contract_info:
+        contract_info = insert_contract_info(contract_address, starknet_node, db)
+    return contract_info
+
+def get_pool_info(contract_address, starknet_node, db):
+    print(contract_address)
+    client = FullNodeClient(starknet_node.base_url, db.network)
+    contract_info = get_contract_info(contract_address, starknet_node, db)
+    contract = Contract(address=int(contract_address, 16), abi=json.loads(contract_info.get('abi')), client=client)
+    loop = asyncio.get_event_loop()
+    try:
+        print(loop.run_until_complete(contract.functions["token0"].call()))
+        #print(loop.run_until_complete(contract.functions["token1"].call()))
+    finally:
+        loop.close()
+    token1_address = "0x0"
+    token0_address : "0x0"
+    pool_info = {
+        "token0": token0_address,
+        "token1": token1_address
+    }
+    print(pool_info)
+    return pool_info
 
 def index_deployed_contract(db):
     return {}

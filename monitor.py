@@ -35,7 +35,7 @@ def monitor_deployed_contracts(block_transactions, timestamp, starknet_node, db)
                             "type": contract_class.get('type'),
                             "deployed_at": datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
                         }
-                        db.insert_contract_type(newly_contract_found)
+                        db.insert_contract(newly_contract_found)
                         print(f'✨ New Contract Deployed Identified ! {tx.get("contract_address")} has been identified as an {contract_class.get("type")}')
                 except Exception as e:
                     print(e)

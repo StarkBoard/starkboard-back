@@ -10,10 +10,11 @@ load_dotenv()
 if __name__ == '__main__':
     starknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
     db = StarkboardDatabase("testnet")
-    for block in range(334216, 340000):
+    #get_declared_class("0x7ce8fa5e5061e4b98576f1fa698a868a94f0245dc7ff9980520f050fb75c0a5", starknet_node, db)
+    for block in range(339324, 339335):
         events = get_events(block, starknet_node=starknet_node)
         #block_transactions = transactions_in_block(block, starknet_node=starknet_node)
-        get_swap_info_in_block(events)
+        get_swap_info_in_block(events, starknet_node, db)
         #monitor_deployed_contracts(block_transactions['transactions'], block_transactions['timestamp'], starknet_node, db)
         #declared_tx = [tx for tx in block_transactions['transactions'] if tx["type"] == "DECLARE"]
         #if declared_tx:

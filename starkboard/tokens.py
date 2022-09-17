@@ -3,7 +3,6 @@ import json
 from starkboard.utils import Requester
 from datetime import datetime, time, timedelta
 from starknet_py.contract import Contract
-from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.full_node_client import FullNodeClient
 
 from starknet_py.net.networks import TESTNET, MAINNET

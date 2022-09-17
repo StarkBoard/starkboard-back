@@ -8,6 +8,33 @@ from functools import wraps
 from datetime import datetime, date
 from threading import Timer
 from db import get_connection
+import numpy as np
+
+def str_to_felt(text):
+    b_text = bytes(text, "ascii")
+    return int.from_bytes(b_text, "big")
+
+def to_uint(a):
+    """Takes in value, returns uint256-ish tuple."""
+    return (a & ((1 << 128) - 1), a >> 128)
+
+def long_str_to_array(text):
+    res = []
+    for tok in text:
+        res.append(str_to_felt(tok))
+    return res
+
+def long_str_to_print_array(text):
+    res = []
+    for tok in text:
+        res.append(str_to_felt(tok))
+    return ' '.join(res)
+
+def decimal_to_hex(decimal: int):
+    return hex(decimal)
+
+def hex_string_to_decimal(hex_string: str):
+    return int(hex_string, 16)
 
 class Requester:
     """
@@ -131,8 +158,12 @@ class StarkboardDatabase():
             print(e)
             return None
 
+    #################################
+    ##     Block Indexer Data       #
+    #################################
+
     #
-    # Insertion Blocks and Daily
+    # Inserts
     #
 
     def insert_block_data(self, data):
@@ -191,6 +222,89 @@ class StarkboardDatabase():
             print(e)
             return False
 
+    #
+    # Getters
+    #
+
+    def get_checkpoint_block(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = f"""SELECT block_number FROM block_data{self._mainnet_suffix} ORDER BY block_number DESC LIMIT 1"""
+            cursor.execute(sql_insert_query)
+            res = cursor.fetchone()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_daily_data_from_blocks(self):
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute("SET SESSION group_concat_max_len = 10000000;")
+            sql_select_query = f"""SELECT full_day as day, SUM(count_txs) as count_txs, 
+                SUM(count_transfers) as count_transfers,
+                SUM(count_new_wallets) as count_new_wallets,
+                SUM(count_new_contracts) as count_new_contracts,
+                SUM(total_fees) as total_fees,
+                SUM(total_fees) / SUM(count_txs) as mean_fees,
+                GROUP_CONCAT(wallets_active SEPARATOR ',') as list_wallets_active
+                FROM block_data{self._mainnet_suffix}
+                GROUP BY full_day
+                ORDER BY full_day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_wallets_info_blocks(self):
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute("SET SESSION group_concat_max_len = 10000000;")
+            sql_select_query = f"""SELECT full_day as day,
+                GROUP_CONCAT(wallets_active SEPARATOR ',') as list_wallets_active
+                FROM block_data{self._mainnet_suffix}
+                WHERE full_day between DATE_SUB(now(),INTERVAL 4 WEEK) and now()
+                GROUP BY full_day
+                ORDER BY full_day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    #
+    # Delete
+    #
+
+    def delete_old_block_data(self, date):
+        try:
+            cursor = self._connection.cursor()
+            sql_delete_query = f"""DELETE FROM block_data{self._mainnet_suffix}
+                WHERE full_day < '{date}'"""
+            cursor.execute(sql_delete_query)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+    #################################
+    ##     Daily Indexer Data       #
+    #################################
+
+    #
+    # Inserts
+    #
 
     def insert_daily_data(self, data):
         try:
@@ -262,9 +376,67 @@ class StarkboardDatabase():
             self._connection = get_connection()
             return False
 
-    ##
-    ## Insertion User data
-    ##
+    #
+    # Getters
+    #
+
+    def get_daily_data(self, date=date.today().strftime('%Y-%m-%d')):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT *
+                FROM daily_data{self._mainnet_suffix}
+                WHERE day = '{date}'
+                ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchone()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_historical_daily_data(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT *
+                FROM daily_data{self._mainnet_suffix}
+                ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_cummulative_field_data(self, field="count_txs"):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT t.day, (
+                    SELECT SUM({field}) 
+                    FROM daily_data{self._mainnet_suffix} t2
+                    WHERE t2.day <= t.day
+                ) as aggregated_amount
+                FROM daily_data{self._mainnet_suffix} t
+                ORDER BY t.day ASC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    #################################
+    ##        User Data             #
+    #################################
+
+    #
+    # Inserts
+    #
 
     def inserts_starkboard_og(self, data):
         try:
@@ -282,6 +454,10 @@ class StarkboardDatabase():
             self._connection = get_connection()
             return False
 
+    #
+    # Getters
+    #
+
     def get_starkboard_og(self, data):
         try:
             cursor = self._connection.cursor()
@@ -296,9 +472,13 @@ class StarkboardDatabase():
             print(e)
             return False
 
-    ##
-    ## Insert Contracts
-    ##
+    #################################
+    ##       Contracts Data         #
+    #################################
+
+    #
+    # Inserts
+    #
 
     def insert_contract_hash(self, data):
         try:
@@ -320,7 +500,7 @@ class StarkboardDatabase():
             self._connection = get_connection()
             return False
 
-    def insert_contract_type(self, data):
+    def insert_contract(self, data):
         try:
             cursor = self._connection.cursor()
             sql_insert_query = """INSERT INTO ecosystem_contracts(
@@ -339,9 +519,47 @@ class StarkboardDatabase():
             self._connection = get_connection()
             return False
 
-    ##
-    ## Insertion Ecosystem
-    ##
+    #
+    # Getters
+    #
+
+    def get_contract_hash(self, class_hash):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """SELECT * from contract_class WHERE class_hash=%s and network=%s"""
+            inserted_block = (class_hash, self.network)
+            cursor.execute(sql_insert_query, inserted_block)
+            res = cursor.fetchone()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    def get_contract(self, contract_address):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """SELECT * from ecosystem_contracts WHERE contract_address=%s and network=%s"""
+            inserted_block = (contract_address, self.network)
+            cursor.execute(sql_insert_query, inserted_block)
+            res = cursor.fetchone()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    #################################
+    ##        Ecosystem Data        #
+    #################################
+
+    #
+    # Inserts
+    #
 
     def insert_ecosystem_offchain(self, data):
         try:	
@@ -394,9 +612,9 @@ class StarkboardDatabase():
             self._connection = get_connection()
             return False
 
-    ##
-    ## Getters Ecosystem
-    ##
+    #
+    # Getters
+    #
 
     def get_ecosystem_offchain(self):
         try:	
@@ -427,108 +645,13 @@ class StarkboardDatabase():
             self._connection = get_connection()
             return False
 
-    ##
-    ## Getters Contracts
-    ##
+    #################################
+    ##         ERC20 Data           #
+    #################################
 
-    def get_contract_hash(self, class_hash):
-        try:
-            cursor = self._connection.cursor()
-            sql_insert_query = """SELECT * from contract_class WHERE class_hash=%s and network=%s"""
-            inserted_block = (class_hash, self.network)
-            cursor.execute(sql_insert_query, inserted_block)
-            res = cursor.fetchone()
-            self._connection.commit()
-            cursor.close()
-            return res
-        except Exception as e:
-            print(e)
-            self._connection = get_connection()
-            return False
-
-    ##
-    ## Getters Blocks
-    ##
-
-    def get_checkpoint_block(self):
-        try:
-            cursor = self._connection.cursor()
-            sql_insert_query = f"""SELECT block_number FROM block_data{self._mainnet_suffix} ORDER BY block_number DESC LIMIT 1"""
-            cursor.execute(sql_insert_query)
-            res = cursor.fetchone()
-            self._connection.commit()
-            cursor.close()
-            return res
-        except Exception as e:
-            print(e)
-            return False
-
-    ##
-    ## Getters aggregated
-    ##
-
-    def get_daily_data_from_blocks(self):
-        try:
-            cursor = self._connection.cursor()
-            cursor.execute("SET SESSION group_concat_max_len = 10000000;")
-            sql_select_query = f"""SELECT full_day as day, SUM(count_txs) as count_txs, 
-                SUM(count_transfers) as count_transfers,
-                SUM(count_new_wallets) as count_new_wallets,
-                SUM(count_new_contracts) as count_new_contracts,
-                SUM(total_fees) as total_fees,
-                SUM(total_fees) / SUM(count_txs) as mean_fees,
-                GROUP_CONCAT(wallets_active SEPARATOR ',') as list_wallets_active
-                FROM block_data{self._mainnet_suffix}
-                GROUP BY full_day
-                ORDER BY full_day DESC"""
-            cursor.execute(sql_select_query)
-            res = cursor.fetchall()
-            self._connection.commit()
-            cursor.close()
-            return res
-        except Exception as e:
-            print(e)
-            return False
-
-    def get_wallets_info_blocks(self):
-        try:
-            cursor = self._connection.cursor()
-            cursor.execute("SET SESSION group_concat_max_len = 10000000;")
-            sql_select_query = f"""SELECT full_day as day,
-                GROUP_CONCAT(wallets_active SEPARATOR ',') as list_wallets_active
-                FROM block_data{self._mainnet_suffix}
-                WHERE full_day between DATE_SUB(now(),INTERVAL 4 WEEK) and now()
-                GROUP BY full_day
-                ORDER BY full_day DESC"""
-            cursor.execute(sql_select_query)
-            res = cursor.fetchall()
-            self._connection.commit()
-            cursor.close()
-            return res
-        except Exception as e:
-            print(e)
-            return False
-
-    ##
-    ## Delete Blocks
-    ##
-
-    def delete_old_block_data(self, date):
-        try:
-            cursor = self._connection.cursor()
-            sql_delete_query = f"""DELETE FROM block_data{self._mainnet_suffix}
-                WHERE full_day < '{date}'"""
-            cursor.execute(sql_delete_query)
-            self._connection.commit()
-            cursor.close()
-            return True
-        except Exception as e:
-            print(e)
-            return False
-
-    ##
-    ## ERC-20 Getters
-    ##
+    #
+    # Getters
+    #
 
     def get_daily_tvl_data_from_blocks(self):
         try:
@@ -578,41 +701,6 @@ class StarkboardDatabase():
                 FROM transfers{self._mainnet_suffix}
                 GROUP BY fullDay, token
                 ORDER BY fullDay DESC"""
-            cursor.execute(sql_select_query)
-            res = cursor.fetchall()
-            self._connection.commit()
-            cursor.close()
-            return res
-        except Exception as e:
-            print(e)
-            return False
-
-    ###
-    ### API Getters
-    ###
-
-    def get_daily_data(self, date=date.today().strftime('%Y-%m-%d')):
-        try:
-            cursor = self._connection.cursor()
-            sql_select_query = f"""SELECT *
-                FROM daily_data{self._mainnet_suffix}
-                WHERE day = '{date}'
-                ORDER BY day DESC"""
-            cursor.execute(sql_select_query)
-            res = cursor.fetchone()
-            self._connection.commit()
-            cursor.close()
-            return res
-        except Exception as e:
-            print(e)
-            return False
-
-    def get_historical_daily_data(self):
-        try:
-            cursor = self._connection.cursor()
-            sql_select_query = f"""SELECT *
-                FROM daily_data{self._mainnet_suffix}
-                ORDER BY day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
             self._connection.commit()
@@ -694,25 +782,6 @@ class StarkboardDatabase():
                 ) as aggregated_amount, t.token
                 FROM daily_transfers{self._mainnet_suffix} t
                 WHERE t.token = '{token}'
-                ORDER BY t.day ASC"""
-            cursor.execute(sql_select_query)
-            res = cursor.fetchall()
-            self._connection.commit()
-            cursor.close()
-            return res
-        except Exception as e:
-            print(e)
-            return False
-
-    def get_cummulative_field_data(self, field="count_txs"):
-        try:
-            cursor = self._connection.cursor()
-            sql_select_query = f"""SELECT t.day, (
-                    SELECT SUM({field}) 
-                    FROM daily_data{self._mainnet_suffix} t2
-                    WHERE t2.day <= t.day
-                ) as aggregated_amount
-                FROM daily_data{self._mainnet_suffix} t
                 ORDER BY t.day ASC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
@@ -822,3 +891,11 @@ def generate_proof_helper(level, index, proof):
                 proof.append(level[index-1])
 
     return generate_proof_helper(next_level, index_parent, proof)
+
+def get_swap_amount_info(amounts, pool_info):
+    amounts = np.array(amounts)
+    amount_index_in, amount_index_out = np.flatnonzero(amounts != '0x0')
+    if amount_index_in == 0 and amount_index_out == 6:
+        return pool_info["token0"], hex_string_to_decimal(amounts[amount_index_in]), pool_info["token1"], hex_string_to_decimal(amounts[amount_index_out])
+    else:
+        return pool_info["token1"], hex_string_to_decimal(amounts[amount_index_in]), pool_info["token0"], hex_string_to_decimal(amounts[amount_index_out])
