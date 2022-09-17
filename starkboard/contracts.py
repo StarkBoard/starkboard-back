@@ -51,26 +51,50 @@ def get_declared_class_in_block(block_txs, node, db):
         message_bytes = base64.b64decode(base64_bytes)
         json_code = json.loads(gzip.decompress(message_bytes).decode()).get('identifiers')
         event_names = [key.split('.')[-2] for key in list(json_code) if "emit_event" in key and not "syscalls.emit_event" in key]
-        abi_keys = [(k, v.get('decorators')) for k, v in json_code.items() if "__main__" in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators'))]
+        abi_keys = []
+        for k, v in json_code.items():
+            if '__main__' in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators')):
+                abi_keys.append((k, v.get('decorators'), None))
+            elif '__main__' in k and v.get('destination') and any(decorator in ["external", "view"] for decorator in json_code.get(v.get('destination'), {}).get('decorators', {})):
+                abi_keys.append((k, json_code.get(v.get('destination')).get('decorators'), v.get('destination')))
         abi = []
-        for (k, decorators) in abi_keys:
-            inputs = json_code[f'{k}.Args'].get('members')
-            inputs = [{"name": member, "type": member_type['cairo_type'].split('.')[-1]} 
-            for member, member_type in inputs.items()]
-            if json_code[f'{k}.Return'].get('cairo_type'):
-                outputs = [json_code[f'{k}.Return']['cairo_type'][1:len(json_code[f'{k}.Return']['cairo_type'])-1]]
+        for (k, decorators, dest) in abi_keys:
+            if dest:
+                inputs = json_code[f'{dest}.Args'].get('members')
+                inputs = [{"name": member, "type": member_type['cairo_type'].split('.')[-1]} 
+                for member, member_type in inputs.items()]
+                if json_code[f'{dest}.Return'].get('cairo_type'):
+                    outputs = [json_code[f'{dest}.Return']['cairo_type'][1:len(json_code[f'{dest}.Return']['cairo_type'])-1]]
+                else:
+                    outputs = []
+                if outputs == ['']:
+                    outputs = []
+                else:
+                    outputs = [{"name": v.split(':')[0].replace(' ', ''), "type": v.split(':')[1].split('.')[-1]} for v in outputs]
+                abi_part = {
+                    "inputs": inputs,
+                    "name": k.split('.')[-1],
+                    "outputs": outputs,
+                    "type": "function"
+                }            
             else:
-                outputs = []
-            if outputs == ['']:
-                outputs = []
-            else:
-                outputs = [{"name": v.split(':')[0].replace(' ', ''), "type": v.split(':')[1].split('.')[-1]} for v in outputs]
-            abi_part = {
-                "inputs": inputs,
-                "name": k.split('.')[-1],
-                "outputs": outputs,
-                "type": "function"
-            }
+                inputs = json_code[f'{k}.Args'].get('members')
+                inputs = [{"name": member, "type": member_type['cairo_type'].split('.')[-1]} 
+                for member, member_type in inputs.items()]
+                if json_code[f'{k}.Return'].get('cairo_type'):
+                    outputs = [json_code[f'{k}.Return']['cairo_type'][1:len(json_code[f'{k}.Return']['cairo_type'])-1]]
+                else:
+                    outputs = []
+                if outputs == ['']:
+                    outputs = []
+                else:
+                    outputs = [{"name": v.split(':')[0].replace(' ', ''), "type": v.split(':')[1].split('.')[-1]} for v in outputs]
+                abi_part = {
+                    "inputs": inputs,
+                    "name": k.split('.')[-1],
+                    "outputs": outputs,
+                    "type": "function"
+                }
             if "view" in decorators:
                 abi_part["stateMutability"] = "view"
             abi.append(abi_part)
@@ -93,26 +117,50 @@ def get_declared_class(class_hash, node, db):
     message_bytes = base64.b64decode(base64_bytes)
     json_code = json.loads(gzip.decompress(message_bytes).decode()).get('identifiers')
     event_names = [key.split('.')[-2] for key in list(json_code) if key.endswith(".emit_event") and "__main__" not in key.split('.')[-2] and not "syscalls.emit_event" in key]
-    abi_keys = [(k, v.get('decorators')) for k, v in json_code.items() if "__main__" in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators'))]
+    abi_keys = []
+    for k, v in json_code.items():
+        if '__main__' in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators')):
+            abi_keys.append((k, v.get('decorators'), None))
+        elif '__main__' in k and v.get('destination') and any(decorator in ["external", "view"] for decorator in json_code.get(v.get('destination'), {}).get('decorators', {})):
+            abi_keys.append((k, json_code.get(v.get('destination')).get('decorators'), v.get('destination')))
     abi = []
-    for (k, decorators) in abi_keys:
-        inputs = json_code[f'{k}.Args'].get('members')
-        inputs = [{"name": member, "type": member_type['cairo_type'].split('.')[-1]} 
-        for member, member_type in inputs.items()]
-        if json_code[f'{k}.Return'].get('cairo_type'):
-            outputs = [json_code[f'{k}.Return']['cairo_type'][1:len(json_code[f'{k}.Return']['cairo_type'])-1]]
+    for (k, decorators, dest) in abi_keys:
+        if dest:
+            inputs = json_code[f'{dest}.Args'].get('members')
+            inputs = [{"name": member, "type": member_type['cairo_type'].split('.')[-1]} 
+            for member, member_type in inputs.items()]
+            if json_code[f'{dest}.Return'].get('cairo_type'):
+                outputs = [json_code[f'{dest}.Return']['cairo_type'][1:len(json_code[f'{dest}.Return']['cairo_type'])-1]]
+            else:
+                outputs = []
+            if outputs == ['']:
+                outputs = []
+            else:
+                outputs = [{"name": v.split(':')[0].replace(' ', ''), "type": v.split(':')[1].split('.')[-1]} for v in outputs]
+            abi_part = {
+                "inputs": inputs,
+                "name": k.split('.')[-1],
+                "outputs": outputs,
+                "type": "function"
+            }            
         else:
-            outputs = []
-        if outputs == ['']:
-            outputs = []
-        else:
-            outputs = [{"name": v.split(':')[0].replace(' ', ''), "type": v.split(':')[1].split('.')[-1]} for v in outputs]
-        abi_part = {
-            "inputs": inputs,
-            "name": k.split('.')[-1],
-            "outputs": outputs,
-            "type": "function"
-        }
+            inputs = json_code[f'{k}.Args'].get('members')
+            inputs = [{"name": member, "type": member_type['cairo_type'].split('.')[-1]} 
+            for member, member_type in inputs.items()]
+            if json_code[f'{k}.Return'].get('cairo_type'):
+                outputs = [json_code[f'{k}.Return']['cairo_type'][1:len(json_code[f'{k}.Return']['cairo_type'])-1]]
+            else:
+                outputs = []
+            if outputs == ['']:
+                outputs = []
+            else:
+                outputs = [{"name": v.split(':')[0].replace(' ', ''), "type": v.split(':')[1].split('.')[-1]} for v in outputs]
+            abi_part = {
+                "inputs": inputs,
+                "name": k.split('.')[-1],
+                "outputs": outputs,
+                "type": "function"
+            }
         if "view" in decorators:
             abi_part["stateMutability"] = "view"
         abi.append(abi_part)

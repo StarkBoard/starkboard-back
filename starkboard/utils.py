@@ -523,6 +523,20 @@ class StarkboardDatabase():
     # Getters
     #
 
+    def get_all_contract_hash(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """SELECT * from contract_class"""
+            cursor.execute(sql_insert_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
     def get_contract_hash(self, class_hash):
         try:
             cursor = self._connection.cursor()
