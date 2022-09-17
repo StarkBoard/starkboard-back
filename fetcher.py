@@ -1,5 +1,6 @@
 import os
 import argparse
+import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 from starkboard.utils import RepeatedTimer, StarkboardDatabase, Requester
@@ -32,7 +33,7 @@ def fetch_checkpoint(db):
 
 last_checked_block = int(os.environ.get("STARTING_BLOCK_FETCHER", 0))
 
-def block_tx_fetcher(block_id, node, db):
+def block_tx_fetcher(block_id, node, db, loop):
     print("---")
     current_block = transactions_in_block(block_id, starknet_node=node)
     if 'code' in current_block:
@@ -54,15 +55,15 @@ def block_tx_fetcher(block_id, node, db):
     print(f'> {active_wallets["count_active_wallets"]} Active wallets found in block.')
     get_declared_class_in_block(current_block['transactions'], node, db)
     monitor_deployed_contracts(current_block['transactions'], current_block['timestamp'], node, db)
-    get_swap_info_in_block(current_block["timestamp"], events, node, db)
+    get_swap_info_in_block(current_block["timestamp"], events, node, db, loop)
     return current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block["block_number"]
 
 
-def block_aggreg_fetcher(db, node):
+def block_aggreg_fetcher(db, node, loop):
     global last_checked_block
     print(f'Checking next block {last_checked_block + 1}')
     try:
-        current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block_number = block_tx_fetcher(last_checked_block + 1, node, db)
+        current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block_number = block_tx_fetcher(last_checked_block + 1, node, db, loop)
         if not current_block:
             print("Connection timed out, retrying...")
             return True
@@ -132,6 +133,7 @@ if __name__ == '__main__':
         staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
         delay = 5
     starkboard_db = StarkboardDatabase(args.network)
+    loop = asyncio.get_event_loop()
     if args.block_data:
         last_checked_block = fetch_checkpoint(starkboard_db)
-        rt = RepeatedTimer(delay, block_aggreg_fetcher, starkboard_db, staknet_node)
+        rt = RepeatedTimer(delay, block_aggreg_fetcher, starkboard_db, staknet_node, loop)
