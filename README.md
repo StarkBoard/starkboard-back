@@ -397,6 +397,50 @@ Retrieve Wallet Ranking (monthly) by number of TXs (most active)
 ```
 
 
+- `/getDailySwapEventsData` [POST]
+Retrieve Swap Events data on a daily basis
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| network  |   String: Network to target (mainnet, testnet)    |
+| contract_address  |   String: Pool address to target (optional)   |
+
+
+3. Return
+
+```
+{
+    'result': [
+        {
+            "day": "Thu, 04 Aug 2022 00:00:00 GMT",
+            "contract_address": "0x..",
+            "count": 236,
+            "count_users": 100,
+            "total_fee": 0.023,
+            "token0_info": {
+                "name": "ETH",
+                "token_address": "0x..."
+            }
+            "token1_info": {
+                "name": "USDC",
+                "token_address": "0x..."
+            }
+            "volume_token0": 0.123123,
+            "volume_token1": 0.324
+        },
+        ...
+    ]
+}
+```
 
 
 - `/getCoreApplications` [POST]

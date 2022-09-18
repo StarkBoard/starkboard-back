@@ -64,8 +64,8 @@ def store_swap_events(timestamp, swap_events, starknet_node, db, pool):
                 "event_key": event_key,
                 "total_fee": to_unit(event_fees, 18),
                 "data": json.dumps({
-                    "amount_in": to_unit(amount_in, token_info_in.get("decimals")),
-                    "amount_out": to_unit(amount_out, token_info_out.get("decimals")),
+                    f"{token_in}": to_unit(amount_in, token_info_in.get("decimals")),
+                    f"{token_out}": to_unit(amount_out, token_info_out.get("decimals")),
                     "router_address": sender
                 })
             }

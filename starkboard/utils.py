@@ -3,6 +3,7 @@ import json
 import os
 import tweepy
 from starkware.crypto.signature.fast_pedersen_hash import pedersen_hash
+from starkboard.constants import SWAP_KEY
 from flask import request, abort
 from functools import wraps
 from datetime import datetime, date
@@ -614,6 +615,82 @@ class StarkboardDatabase():
             self._connection = get_connection()
             return False
 
+    def insert_daily_events(self, data):
+        try:
+            cursor = self._connection.cursor()
+            sql_upsert_query = f"""INSERT INTO daily_contract_data(
+                day, contract_address, event_key, count, total_fee, count_users, data, network
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
+                day=%s, contract_address=%s, event_key=%s, count=%s, total_fee=%s, count_users=%s, data=%s, network=%s
+            """
+            inserted_events = (
+                data["day"], data["contract_address"], data["event_key"], data["count"], 
+                data["total_fee"], data["count_users"], json.dumps(data["data"]), self.network,
+                data["day"], data["contract_address"], data["event_key"], data["count"], 
+                data["total_fee"], data["count_users"], json.dumps(data["data"]), self.network
+            )
+            cursor.execute(sql_upsert_query, inserted_events)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    #
+    # Getters
+    #
+
+    def get_daily_swap_events(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT full_day as day,
+                event_key,
+                contract_address,
+                COUNT(*) as count,
+                SUM(total_fee) as total_fee,
+                COUNT(DISTINCT wallet_address) as count_users,
+                GROUP_CONCAT(DISTINCT(wallet_address) SEPARATOR ',') as user_wallets,
+                SUM(JSON_EXTRACT(data, "$.token0")) as volume_token0,
+                SUM(JSON_EXTRACT(data, "$.token1")) as volume_token1
+                FROM contract_data
+                WHERE event_key="{SWAP_KEY[0]}" AND network="{self.network}"
+                GROUP BY full_day, contract_address
+                ORDER BY full_day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    def get_historical_daily_swap_data(self, filter_contract=None):
+        try:
+            cursor = self._connection.cursor()
+            if filter_contract:
+                filter_statement = f' AND contract_address="{filter_contract}"'
+            else:
+                filter_statement = ''
+            sql_select_query = f"""SELECT 
+                day, contract_address, count, total_fee, count_users, 
+                JSON_EXTRACT(data, "$.volume_token0") as volume_token0,
+                JSON_EXTRACT(data, "$.volume_token1") as volume_token1
+                FROM daily_contract_data
+                WHERE event_key="{SWAP_KEY[0]}" AND network="{self.network}"{filter_statement}
+                ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
     #################################
     ##        Ecosystem Data        #
     #################################
@@ -958,19 +1035,19 @@ def get_swap_amount_info(amounts, pool_info):
     amount_index_in, amount_index_out = np.flatnonzero(amounts != '0x0')
     if amount_index_in == 0 and amount_index_out == 6:
         return (
-            pool_info["token0"], 
+            "token0", 
             pool_info["token0_info"], 
             hex_string_to_decimal(amounts[amount_index_in]), 
-            pool_info["token1"], 
+            "token1", 
             pool_info["token1_info"],
             hex_string_to_decimal(amounts[amount_index_out])
         )
     else:
         return (
-            pool_info["token1"], 
+            "token1", 
             pool_info["token1_info"], 
             hex_string_to_decimal(amounts[amount_index_in]), 
-            pool_info["token0"], 
+            "token0", 
             pool_info["token0_info"], 
             hex_string_to_decimal(amounts[amount_index_out])
         )

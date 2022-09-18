@@ -1,8 +1,9 @@
 from flask import request, Blueprint
+import os
 from starkboard.transactions import transactions_in_block
 from starkboard.contracts import count_contract_deployed_current_block
 from starkboard.utils import StarkboardDatabase, Requester, require_appkey, generate_merkle_proof
-from starkboard.fees import get_block_fees
+from starkboard.fees import get_fees_in_block
 from starkboard.user import whitelist, use_wallets_ranking
 from starkboard.ecosystem.fetch_application import get_core_ecosystem
 from datetime import date
@@ -22,6 +23,7 @@ wallets_3, leaves_3 = whitelist(StarkboardDatabase(), 2)
 #######################
 #    General Route    #
 #######################
+
 @app_routes.route('/storeStarkboardOg', methods=['POST'])
 @require_appkey
 def store_starkboard_og():
@@ -118,6 +120,7 @@ def get_whitelist_proof():
 #######################
 #    User Routes      #
 #######################
+
 @app_routes.route('/getWalletValue', methods=['POST'])
 @require_appkey
 def get_wallet_value():
@@ -144,6 +147,7 @@ def get_wallet_ranking():
 #######################
 #  Global Data Route  #
 #######################
+
 @app_routes.route('/getDailyData', methods=['POST'])
 @require_appkey
 def get_daily_data():
@@ -233,6 +237,7 @@ def get_cummulative_transfer_volume_evolution():
 #######################
 #  Contracts Routes   #
 #######################
+
 @app_routes.route('/getCurrentBlockCountContractsDeployed', methods=['GET'])
 @require_appkey
 def get_count_contrats_deployed_current_block():
@@ -275,7 +280,7 @@ def get_estimate_fees():
             starknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
         else:
             starknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
-        actual_fees =  get_block_fees(None, starknet_node)["mean_fees"]
+        actual_fees =  get_fees_in_block(None, starknet_node)["mean_fees"]
         return {
             'result': actual_fees
         }, 200
@@ -284,6 +289,29 @@ def get_estimate_fees():
             'error': e.message
         }, 400
 
+
+#######################
+#   Events Routes     #
+#######################
+
+@app_routes.route('/getDailySwapEventsData', methods=['POST'])
+@cache.cached(timeout=20)
+@require_appkey
+def get_daily_swap_events_data():
+    """
+    Retrieve the daily swaps events data
+    """
+    try:
+        data = request.get_json()
+        starkboard_db = StarkboardDatabase(data.get('network', 'testnet'))
+        res = starkboard_db.get_historical_daily_swap_data(data.get('contract_address'))
+        return {
+            'result': res
+        }, 200
+    except Exception as e:
+        return {
+            'error': e.message
+        }, 400
 
 #######################
 #  Ecosystem Route    #

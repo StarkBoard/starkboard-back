@@ -34,9 +34,10 @@ def get_block_mints_data_by_date(db):
     list_tokens = daily_data_df.token.unique().tolist()
     for token in list_tokens:
         sub_daily = daily_data_df[daily_data_df.token == token].to_dict('records')
-        for daily in sub_daily:
+        for day_count, daily in enumerate(sub_daily):
             print(f'Inserting TVL data on {daily["day"]} for {token}')
             db.insert_daily_tvl_data(daily)
+            if day_count > 7: break
 
 
 def get_block_transfers_data_by_date(db):
@@ -44,10 +45,22 @@ def get_block_transfers_data_by_date(db):
     list_tokens = daily_data_df.token.unique().tolist()
     for token in list_tokens:
         sub_daily = daily_data_df[daily_data_df.token == token].to_dict('records')
-        for daily in sub_daily:
+        for day_count, daily in enumerate(sub_daily):
             print(f'Inserting Transfers data on {daily["day"]} for {token}')
             db.insert_daily_transfers_data(daily)
+            if day_count > 7: break
 
+
+def get_events_data_by_date(db):
+    daily_swaps = db.get_daily_swap_events()
+    for day_count, daily in enumerate(daily_swaps):
+        data = {
+            "volume_token0": daily['volume_token0'],
+            "volume_token1": daily['volume_token1']
+        }
+        daily['data'] = json.dumps(data)
+        print(f'Inserting data on {daily["day"]}')
+        db.insert_daily_events(daily)
 
 
 def test_func(db):
@@ -61,12 +74,14 @@ if __name__ == '__main__':
     get_block_data_by_date(starkboard_db)
     get_block_mints_data_by_date(starkboard_db)
     get_block_transfers_data_by_date(starkboard_db)
+    get_events_data_by_date(starkboard_db)
     print("Testned indexed !")
     print("Indexing Data for Mainnet...")
     starkboard_db = StarkboardDatabase("mainnet")
     get_block_data_by_date(starkboard_db)
     get_block_mints_data_by_date(starkboard_db)
     get_block_transfers_data_by_date(starkboard_db)
+    get_events_data_by_date(starkboard_db)
     print("Mainnet indexed !")
     print("OffChain Indexing....")
     socials_metrics()
