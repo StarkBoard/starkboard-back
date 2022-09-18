@@ -426,14 +426,8 @@ Retrieve Swap Events data on a daily basis
             "count": 236,
             "count_users": 100,
             "total_fee": 0.023,
-            "token0_info": {
-                "name": "ETH",
-                "token_address": "0x..."
-            }
-            "token1_info": {
-                "name": "USDC",
-                "token_address": "0x..."
-            }
+            "token0_address": "0x...",
+            "token1_address": "0x...",
             "volume_token0": 0.123123,
             "volume_token1": 0.324
         },
