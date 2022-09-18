@@ -679,8 +679,8 @@ class StarkboardDatabase():
                 DCD.day, DCD.contract_address, DCD.count, DCD.total_fee, DCD.count_users, 
                 JSON_EXTRACT(DCD.data, "$.volume_token0") as volume_token0,
                 JSON_EXTRACT(DCD.data, "$.volume_token1") as volume_token1,
-                REPLACE(JSON_EXTRACT(EC.view_info, "$.token0"),'"','') as token0_address,
-                REPLACE(JSON_EXTRACT(EC.view_info, "$.token1"),'"','') as token1_address
+                CAST(REPLACE(JSON_EXTRACT(EC.view_info, "$.token0"),'"','') AS FLOAT) as token0_address,
+                CAST(REPLACE(JSON_EXTRACT(EC.view_info, "$.token1"),'"','') AS FLOAT) as token1_address
                 FROM daily_contract_data as DCD
                 INNER JOIN ecosystem_contracts as EC ON DCD.contract_address=EC.contract_address
                 WHERE DCD.event_key="{SWAP_KEY[0]}" AND DCD.network="{self.network}"{filter_statement}
