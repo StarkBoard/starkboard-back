@@ -625,9 +625,9 @@ class StarkboardDatabase():
             """
             inserted_events = (
                 data["day"], data["contract_address"], data["event_key"], data["count"], 
-                data["total_fee"], data["count_users"], json.dumps(data["data"]), self.network,
+                data["total_fee"], data["count_users"], data["data"], self.network,
                 data["day"], data["contract_address"], data["event_key"], data["count"], 
-                data["total_fee"], data["count_users"], json.dumps(data["data"]), self.network
+                data["total_fee"], data["count_users"], data["data"], self.network
             )
             cursor.execute(sql_upsert_query, inserted_events)
             self._connection.commit()
@@ -672,16 +672,19 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             if filter_contract:
-                filter_statement = f' AND contract_address="{filter_contract}"'
+                filter_statement = f' AND DCD.contract_address="{filter_contract}"'
             else:
                 filter_statement = ''
             sql_select_query = f"""SELECT 
-                day, contract_address, count, total_fee, count_users, 
-                JSON_EXTRACT(data, "$.volume_token0") as volume_token0,
-                JSON_EXTRACT(data, "$.volume_token1") as volume_token1
-                FROM daily_contract_data
-                WHERE event_key="{SWAP_KEY[0]}" AND network="{self.network}"{filter_statement}
-                ORDER BY day DESC"""
+                DCD.day, DCD.contract_address, DCD.count, DCD.total_fee, DCD.count_users, 
+                JSON_EXTRACT(DCD.data, "$.volume_token0") as volume_token0,
+                JSON_EXTRACT(DCD.data, "$.volume_token1") as volume_token1,
+                REPLACE(JSON_EXTRACT(EC.view_info, "$.token0"),'"','') as token0_address,
+                REPLACE(JSON_EXTRACT(EC.view_info, "$.token1"),'"','') as token1_address
+                FROM daily_contract_data as DCD
+                INNER JOIN ecosystem_contracts as EC ON DCD.contract_address=EC.contract_address
+                WHERE DCD.event_key="{SWAP_KEY[0]}" AND DCD.network="{self.network}"{filter_statement}
+                ORDER BY DCD.day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
             self._connection.commit()
