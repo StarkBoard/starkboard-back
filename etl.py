@@ -69,7 +69,6 @@ def test_func(db):
 
 
 if __name__ == '__main__':
-    """
     print("Indexing Data for Testnet...")
     starkboard_db = StarkboardDatabase("testnet")
     get_block_data_by_date(starkboard_db)
@@ -87,8 +86,3 @@ if __name__ == '__main__':
     print("OffChain Indexing....")
     socials_metrics()
     print("OffChain Indexing done !")
-    """
-    starkboard_db = StarkboardDatabase("testnet")
-    get_events_data_by_date(starkboard_db)
-    starkboard_db = StarkboardDatabase("mainnet")
-    get_events_data_by_date(starkboard_db)

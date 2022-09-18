@@ -44,7 +44,7 @@ if __name__ == '__main__':
         ]
         SCHEDULER_API_ENABLED = True
     app.config.from_object(Config())    
-    #scheduler = APScheduler()
-    #scheduler.init_app(app)
-    #scheduler.start()
+    scheduler = APScheduler()
+    scheduler.init_app(app)
+    scheduler.start()
     app.run(host="0.0.0.0", port=8080)
