@@ -14,9 +14,6 @@ def store_swap_events(timestamp, swap_events, starknet_node, db, pool):
         try:
             assert len(event["data"]) == 10
             swap_structure = get_event_structure_from_abi(pool_info[pair_swapped], "Swap")
-            
-
-
             block_number = event["block_number"]
             event_key = event["keys"][0]
             tx_hash = event["transaction_hash"]

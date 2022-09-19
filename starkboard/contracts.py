@@ -65,6 +65,25 @@ def get_declared_class_in_block(block_txs, node, db):
                 "type": "event"
             }
             abi.append(abi_part)
+            for ev_d in event_data:
+                struct_name = event_data[ev_d].get('cairo_type')
+                if struct_name[-1] == "*":
+                    struct_name = struct_name[:-1]
+                if struct_name != "felt" and struct_name != "felt*":
+                    struct_data = json_code[struct_name]
+                    composition = dict(sorted(struct_data['members'].items(), key=lambda item: item[1].get('offset')))
+                    abi_struct_data = [{
+                        "name": arg, 
+                        "type": composition[arg].get('cairo_type').split('.')[-1],
+                        "offset": composition[arg].get('offset')
+                    } for arg in composition]
+                    abi_part = {
+                        "name": struct_data['full_name'].split('.')[-1],
+                        "members": abi_struct_data,
+                        "size":  struct_data['size'],
+                        "type": struct_data['type']
+                    }
+                    abi.append(abi_part)
         for k, v in json_code.items():
             if '__main__' in k and v.get('decorators') and any(decorator in ["constructor"] for decorator in v.get('decorators')):
                 abi_keys.append((k, v.get('decorators'), None))
@@ -148,6 +167,25 @@ def get_declared_class(class_hash, node, db):
             "type": "event"
         }
         abi.append(abi_part)
+        for ev_d in event_data:
+            struct_name = event_data[ev_d].get('cairo_type')
+            if struct_name[-1] == "*":
+                struct_name = struct_name[:-1]
+            if struct_name != "felt" and struct_name != "felt*":
+                struct_data = json_code[struct_name]
+                composition = dict(sorted(struct_data['members'].items(), key=lambda item: item[1].get('offset')))
+                abi_struct_data = [{
+                    "name": arg, 
+                    "type": composition[arg].get('cairo_type').split('.')[-1],
+                    "offset": composition[arg].get('offset')
+                } for arg in composition]
+                abi_part = {
+                    "name": struct_data['full_name'].split('.')[-1],
+                    "members": abi_struct_data,
+                    "size":  struct_data['size'],
+                    "type": struct_data['type']
+                }
+                abi.append(abi_part)
     for k, v in json_code.items():
         if '__main__' in k and v.get('decorators') and any(decorator in ["constructor"] for decorator in v.get('decorators')):
             abi_keys.append((k, v.get('decorators'), None))

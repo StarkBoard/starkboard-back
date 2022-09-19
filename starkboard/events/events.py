@@ -35,7 +35,8 @@ def filter_events(events, keys):
 
 def get_events_definition_from_contract(contract_address):
     abi = json.loads(get_contract_info(contract_address)['abi'])
-    return list(filter(lambda x: x['type'] == "event", abi))
+    events_abi = list(filter(lambda x: x['type'] == "event", abi))
+    return [dict(event, **{'keys': [get_selector_from_name(event['name'])]}) for event in events_abi]
 
 def get_event_structure_from_abi(abi, event_name):
     return list(filter(lambda x: x['type'] == "event" and x['name'] == event_name, abi))
@@ -49,7 +50,22 @@ class BlockEventsParser:
         involved_contracts = set([event['from_address'] for event in self.raw_events])
         self.involved_contracts_events = {contract_address: get_events_definition_from_contract(contract_address) for contract_address in involved_contracts}
         for event in self.raw_events:
-            self.involved_contracts_info[event['from_address']]
-            event['name'] = get_selector_from_name()
+            involved_contract_event_definition = list(filter(lambda x: x['keys'] == event['keys'], self.involved_contracts_info[event['from_address']]))[0]
+            event['name'] = involved_contract_event_definition['name']
+            event['transformed_data'] = EventData(event['data'], involved_contract_event_definition['data'])
 
+class EventData:
+    def __init__(self, event_data, structure) -> None:
+        self.raw_event_data = event_data
+        self.event_data = []
+        self.structure = structure
 
+    def initialize(self):
+        for offset, struct in enumerate(self.structure):
+            self.raw_event_data = self.raw_event_data[1:]
+            current_value = {
+                "name": struct['name'],
+                "type": struct['type'],
+                "value": self.raw_event_data
+            }
+            self.event_data.append(current_value)
