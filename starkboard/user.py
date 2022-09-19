@@ -6,7 +6,7 @@ from functools import reduce
 from starkboard.utils import get_leaves
 from starkboard.constants import WALLET_KEYS
 from starkboard.tokens import get_balance_of, get_nonce_of
-from starkboard.events import filter_events
+from starkboard.events.events import filter_events
 
 mainnet_ranking = list()
 testnet_ranking = list()

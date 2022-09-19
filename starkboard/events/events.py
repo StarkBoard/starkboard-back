@@ -1,5 +1,6 @@
 import json
 from starkware.starknet.compiler.compile import get_selector_from_name
+from starkboard.contracts import get_contract_info
 
 def get_events(block_number, starknet_node):
     """
@@ -32,7 +33,8 @@ def filter_events(events, keys):
     filtered_events = list(filter(lambda event: event['keys'][0] in keys, events))
     return filtered_events
 
-def get_events_from_abi(abi):
+def get_events_definition_from_contract(contract_address):
+    abi = json.loads(get_contract_info(contract_address)['abi'])
     return list(filter(lambda x: x['type'] == "event", abi))
 
 def get_event_structure_from_abi(abi, event_name):
@@ -41,4 +43,13 @@ def get_event_structure_from_abi(abi, event_name):
 class BlockEventsParser:
     def __init__(self, events) -> None:
         self.raw_events = events
-        
+        self.initialize()
+
+    def initialize(self):
+        involved_contracts = set([event['from_address'] for event in self.raw_events])
+        self.involved_contracts_events = {contract_address: get_events_definition_from_contract(contract_address) for contract_address in involved_contracts}
+        for event in self.raw_events:
+            self.involved_contracts_info[event['from_address']]
+            event['name'] = get_selector_from_name()
+
+

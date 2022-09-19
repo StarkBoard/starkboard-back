@@ -24,7 +24,7 @@ if __name__ == '__main__':
             print(f'getting class hash : {contract_class.get("class_hash")}')
             get_declared_class(contract_class.get('class_hash'), starknet_node_mainnet, db_mainnet)
     """
-    for block in range(330000, 335000):
+    for block in range(310000, 320000):
         #events = get_events(block, starknet_node=starknet_node)
         block_transactions = transactions_in_block(block, starknet_node=starknet_node)
         #get_swap_info_in_block(block_transactions['timestamp'], events, starknet_node, db, loop)
