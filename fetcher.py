@@ -4,7 +4,7 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 from starkboard.utils import RepeatedTimer, StarkboardDatabase, Requester
-from starkboard.events import get_events
+from starkboard.events.events import get_events
 from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block, get_swap_info_in_block
 from starkboard.user import count_wallet_deploy_in_block, get_active_wallets_in_block
 from starkboard.contracts import count_contract_deployed_in_block, get_declared_class_in_block
@@ -129,8 +129,10 @@ if __name__ == '__main__':
     if args.network == "mainnet":
         delay = 30
         staknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
+        staknet_sequencer = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL_MAINNET"), headers={"Content-Type": "application/json"})
     else:
         staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
+        staknet_sequencer = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL"), headers={"Content-Type": "application/json"})
         delay = 5
     starkboard_db = StarkboardDatabase(args.network)
     loop = asyncio.get_event_loop()

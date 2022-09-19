@@ -1,5 +1,6 @@
 import json
-from starkboard.events import filter_events, store_swap_events
+from starkboard.events.events import filter_events
+from starkboard.events.swap import store_swap_events
 from starkboard.constants import TRANSFER_KEY, SWAP_KEY
 
 ################################1

@@ -52,13 +52,26 @@ def get_declared_class_in_block(block_txs, node, db):
         message_bytes = base64.b64decode(base64_bytes)
         json_code = json.loads(gzip.decompress(message_bytes).decode()).get('identifiers')
         event_names = [key.split('.')[-2] for key in list(json_code) if "emit_event" in key and not "syscalls.emit_event" in key]
+        event_full_names = [key for key in list(json_code) if key.endswith(".emit") and "__main__" not in key.split('.')[-2] and not "syscalls.emit_event" in key]
         abi_keys = []
+        abi = []
+        for k in event_full_names:
+            event_data = dict(sorted(json_code[f'{k}.Args']['members'].items(), key=lambda item: item[1].get('offset')))
+            abi_event_data = [{"name": arg, "type": event_data[arg].get('cairo_type').split('.')[-1]} for arg in event_data]
+            abi_part = {
+                "data": abi_event_data,
+                "name": k.split('.')[-2],
+                "keys": [],
+                "type": "event"
+            }
+            abi.append(abi_part)
         for k, v in json_code.items():
+            if '__main__' in k and v.get('decorators') and any(decorator in ["constructor"] for decorator in v.get('decorators')):
+                abi_keys.append((k, v.get('decorators'), None))
             if '__main__' in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators')):
                 abi_keys.append((k, v.get('decorators'), None))
             elif '__main__' in k and v.get('destination') and any(decorator in ["external", "view"] for decorator in json_code.get(v.get('destination'), {}).get('decorators', {})):
                 abi_keys.append((k, json_code.get(v.get('destination')).get('decorators'), v.get('destination')))
-        abi = []
         for (k, decorators, dest) in abi_keys:
             if dest:
                 inputs = json_code[f'{dest}.Args'].get('members')
@@ -90,11 +103,15 @@ def get_declared_class_in_block(block_txs, node, db):
                     outputs = []
                 else:
                     outputs = [{"name": v.split(':')[0].replace(' ', ''), "type": v.split(':')[1].split('.')[-1]} for v in outputs]
+                if "constructor" in json_code[k].get('decorators'):
+                    function_type = "constructor"
+                else:
+                    function_type = "function"
                 abi_part = {
                     "inputs": inputs,
                     "name": k.split('.')[-1],
                     "outputs": outputs,
-                    "type": "function"
+                    "type": function_type
                 }
             if "view" in decorators:
                 abi_part["stateMutability"] = "view"
@@ -118,13 +135,26 @@ def get_declared_class(class_hash, node, db):
     message_bytes = base64.b64decode(base64_bytes)
     json_code = json.loads(gzip.decompress(message_bytes).decode()).get('identifiers')
     event_names = [key.split('.')[-2] for key in list(json_code) if key.endswith(".emit_event") and "__main__" not in key.split('.')[-2] and not "syscalls.emit_event" in key]
+    event_full_names = [key for key in list(json_code) if key.endswith(".emit") and "__main__" not in key.split('.')[-2] and not "syscalls.emit_event" in key]
     abi_keys = []
+    abi = []
+    for k in event_full_names:
+        event_data = dict(sorted(json_code[f'{k}.Args']['members'].items(), key=lambda item: item[1].get('offset')))
+        abi_event_data = [{"name": arg, "type": event_data[arg].get('cairo_type').split('.')[-1]} for arg in event_data]
+        abi_part = {
+            "data": abi_event_data,
+            "name": k.split('.')[-2],
+            "keys": [],
+            "type": "event"
+        }
+        abi.append(abi_part)
     for k, v in json_code.items():
+        if '__main__' in k and v.get('decorators') and any(decorator in ["constructor"] for decorator in v.get('decorators')):
+            abi_keys.append((k, v.get('decorators'), None))
         if '__main__' in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators')):
             abi_keys.append((k, v.get('decorators'), None))
         elif '__main__' in k and v.get('destination') and any(decorator in ["external", "view"] for decorator in json_code.get(v.get('destination'), {}).get('decorators', {})):
             abi_keys.append((k, json_code.get(v.get('destination')).get('decorators'), v.get('destination')))
-    abi = []
     for (k, decorators, dest) in abi_keys:
         if dest:
             inputs = json_code[f'{dest}.Args'].get('members')
@@ -156,11 +186,15 @@ def get_declared_class(class_hash, node, db):
                 outputs = []
             else:
                 outputs = [{"name": v.split(':')[0].replace(' ', ''), "type": v.split(':')[1].split('.')[-1]} for v in outputs]
+            if "constructor" in json_code[k].get('decorators'):
+                function_type = "constructor"
+            else:
+                function_type = "function"
             abi_part = {
                 "inputs": inputs,
                 "name": k.split('.')[-1],
                 "outputs": outputs,
-                "type": "function"
+                "type": function_type
             }
         if "view" in decorators:
             abi_part["stateMutability"] = "view"
@@ -181,7 +215,7 @@ def get_declared_class(class_hash, node, db):
 
 def get_class_program(class_hash, starknet_node=None):
     """
-    Retrieve the list of transactions hash from a given block number
+    Retrieve the program gzip encoded of a given class
     """
     params = class_hash
     r = starknet_node.post("", method="starknet_getClass", params=[params])
@@ -189,6 +223,16 @@ def get_class_program(class_hash, starknet_node=None):
     if 'error'in data:
         return data['error']
     return data["result"]['program']
+
+def get_class_abi(class_hash, starknet_sequencer=None):
+    """
+    Retrieve the ABI of a given class
+    """
+    r = starknet_sequencer.get(f'get_class_by_hash?classHash={class_hash}')
+    data = json.loads(r.text)
+    if 'error'in data:
+        return data['error']
+    return data['abi']
 
 def get_contract_class_type(abi_keys, event_names):
     list_functions = list(map(lambda x: x[0].split('.')[-1], abi_keys))
@@ -249,7 +293,8 @@ def get_pool_info(contract_address, starknet_node, db, loop):
             "token0": token0_address,
             "token0_info": token0_info,
             "token1": token1_address,
-            "token1_info": token1_info
+            "token1_info": token1_info,
+            "abi": json.loads(contract_info.get('abi'))
         }
         return pool_info
     except:
