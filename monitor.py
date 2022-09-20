@@ -17,7 +17,7 @@ def monitor_deployed_contracts(block_transactions, timestamp, starknet_node, db,
                         "0xa69700a89b1fa3648adff91c438b79c75f7dcb0f4798938a144cce221639d6",
                         "0x4572af1cd59b8b91055ebb78df8f1d11c59f5270018b291366ba4585d4cdff0"]:
                         break
-                    contract_info = loop.run_until_complete(get_contract_info(tx.get('contract_address'), starknet_node, db, class_hash))
+                    contract_info = loop.run_until_complete(get_contract_info(tx.get('contract_address'), starknet_node, db, class_hash, timestamp))
                     print(f'✨ New Contract Deployed Identified ! {tx.get("contract_address")} has been identified as an {contract_info.get("contract_type")}')
                 except Exception as e:
                     print(e)

@@ -285,14 +285,15 @@ def get_class_info(class_hash, starknet_node, db):
         class_info = get_declared_class(class_hash, starknet_node, db)
     return class_info
 
-async def insert_contract_info(contract_address, starknet_node, db, class_hash=None):
-    if not class_hash:
+async def insert_contract_info(contract_address, starknet_node, db, class_hash=None, timestamp=None):
+    if not class_hash and not timestamp:
         params = contract_address
         r = starknet_node.post("", method="starknet_getClassHashAt", params=["pending", params])
         data = json.loads(r.text)
         if 'error'in data:
             return data['error']
         class_hash = data['result']
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     contract_class = get_class_info(class_hash, starknet_node, db)
     contract_class = get_class_info(class_hash, starknet_node, db)
     if contract_class:
@@ -312,15 +313,15 @@ async def insert_contract_info(contract_address, starknet_node, db, class_hash=N
         "abi": abi,
         "class_hash": class_hash,
         "type": contract_type,
-        "deployed_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        "deployed_at": timestamp
     }
     db.insert_contract(newly_contract_found)
     return newly_contract_found
 
-async def get_contract_info(contract_address, starknet_node, db, class_hash=None):
+async def get_contract_info(contract_address, starknet_node, db, class_hash=None, timestamp=None):
     contract_info = db.get_contract(contract_address)
     if not contract_info:
-        contract_info = await insert_contract_info(contract_address, starknet_node, db, class_hash)
+        contract_info = await insert_contract_info(contract_address, starknet_node, db, class_hash, timestamp)
     return contract_info
 
 async def get_pool_info(contract_address, starknet_node, db):

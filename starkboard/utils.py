@@ -512,7 +512,7 @@ class StarkboardDatabase():
                 ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
             inserted_block = (
                 data["contract_address"], data["application"], data["event_keys"], 
-                data["type"], data["class_hash"], data['abi'], data['deployed_at'], self.network
+                data["contract_type"], data["class_hash"], data['abi'], data['deployed_at'], self.network
             )
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
