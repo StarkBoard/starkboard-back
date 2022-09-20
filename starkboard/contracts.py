@@ -384,6 +384,5 @@ def get_proxy_contract(contract_address, proxy_abi, node, db, loop):
         contract_info = loop.run_until_complete(call_implementation(contract, node, db))
         return contract_info
     except Exception as e:
-        print(e)
         print(f'Contract {contract_address} is not at Standard.')
-        return None
+        return {}
