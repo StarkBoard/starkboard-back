@@ -389,7 +389,7 @@ async def call_implementation(contract, node, db):
         contract_info = await get_contract_info(contract_implementation, node, db)
     return contract_info
 
-async def get_proxy_contract(contract_address, proxy_abi, node, db, loop):
+async def get_proxy_contract(contract_address, proxy_abi, node, db):
     try:
         client = FullNodeClient(node.base_url, db.network)
         contract = Contract(address=int(contract_address, 16), abi=json.loads(proxy_abi), client=client)
