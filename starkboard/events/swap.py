@@ -1,4 +1,5 @@
 import json
+import asyncio
 import numpy as np
 from datetime import datetime
 from starkboard.utils import get_swap_amount_info, to_unit
@@ -7,9 +8,17 @@ from starkboard.fees import get_fees_in_tx
 from starkboard.events.events import get_event_structure_from_abi
 
 
-def store_swap_events(timestamp, swap_events, starknet_node, db, pool):
+def fetch_pool_info(swap_events, starknet_node, db, loop):
     pool_contracts = list(set(map(lambda event: event["from_address"], swap_events)))
-    pool_info = {contract_address: get_pool_info(contract_address, starknet_node, db, pool) for contract_address in pool_contracts}
+    pool_info = {}
+    group = asyncio.gather(*[get_pool_info(contract, starknet_node, db) for contract in pool_contracts])
+    results = loop.run_until_complete(group)
+    for idx, contract in enumerate(pool_contracts):
+        pool_info[contract] = results[idx]
+    return pool_info
+
+def store_swap_events(timestamp, swap_events, pool_info, starknet_node, db):
+    print(pool_info)
     for event in swap_events:
         try:
             assert len(event["data"]) == 10

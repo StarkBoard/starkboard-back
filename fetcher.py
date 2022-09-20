@@ -55,15 +55,18 @@ def block_tx_fetcher(block_id, node, db, loop):
     print(f'> {active_wallets["count_active_wallets"]} Active wallets found in block.')
     get_declared_class_in_block(current_block['transactions'], node, db)
     monitor_deployed_contracts(current_block['transactions'], current_block['timestamp'], node, db, loop)
-    get_swap_info_in_block(current_block["timestamp"], events, node, db, loop)
+    #get_swap_info_in_block(current_block["timestamp"], events, node, db, loop)
     return current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block["block_number"]
 
 
-def block_aggreg_fetcher(db, node, loop):
+def block_aggreg_fetcher(db, node):
     global last_checked_block
     print(f'Checking next block {last_checked_block + 1}')
     try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block_number = block_tx_fetcher(last_checked_block + 1, node, db, loop)
+        loop.close()
         if not current_block:
             print("Connection timed out, retrying...")
             return True
@@ -135,7 +138,6 @@ if __name__ == '__main__':
         staknet_sequencer = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL"), headers={"Content-Type": "application/json"})
         delay = 5
     starkboard_db = StarkboardDatabase(args.network)
-    loop = asyncio.get_event_loop()
     if args.block_data:
         last_checked_block = fetch_checkpoint(starkboard_db)
-        rt = RepeatedTimer(delay, block_aggreg_fetcher, starkboard_db, staknet_node, loop)
+        rt = RepeatedTimer(delay, block_aggreg_fetcher, starkboard_db, staknet_node)

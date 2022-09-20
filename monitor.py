@@ -1,7 +1,7 @@
 from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
-from starkboard.contracts import get_class_info, get_proxy_contract
+from starkboard.contracts import get_class_info, get_proxy_contract, get_contract_info
 
 
 def monitor_deployed_contracts(block_transactions, timestamp, starknet_node, db, loop):
@@ -17,28 +17,8 @@ def monitor_deployed_contracts(block_transactions, timestamp, starknet_node, db,
                         "0xa69700a89b1fa3648adff91c438b79c75f7dcb0f4798938a144cce221639d6",
                         "0x4572af1cd59b8b91055ebb78df8f1d11c59f5270018b291366ba4585d4cdff0"]:
                         break
-                    contract_class = get_class_info(class_hash, starknet_node, db)
-                    if contract_class:
-                        if contract_class.get('type') == "Proxy":
-                            proxy_contract = get_proxy_contract(tx.get("contract_address"), contract_class.get("abi"), starknet_node, db, loop)
-                            abi = proxy_contract.get("abi", "[]")
-                            event_keys = proxy_contract.get("event_keys", "[]")
-                            contract_type = proxy_contract.get('type')
-                        else:
-                            abi = contract_class.get("abi", "[]")
-                            event_keys = contract_class.get("event_keys", "[]")
-                            contract_type = contract_class.get('type')
-                        newly_contract_found = {
-                            "contract_address": tx.get("contract_address"),
-                            "application": "Unknown",
-                            "event_keys": event_keys,
-                            "abi": abi,
-                            "class_hash": class_hash,
-                            "type": contract_type,
-                            "deployed_at": datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-                        }
-                        db.insert_contract(newly_contract_found)
-                        print(f'✨ New Contract Deployed Identified ! {tx.get("contract_address")} has been identified as an {contract_type}')
+                    contract_info = loop.run_until_complete(get_contract_info(tx.get('contract_address'), starknet_node, db, class_hash))
+                    print(f'✨ New Contract Deployed Identified ! {tx.get("contract_address")} has been identified as an {contract_info.get("contract_type")}')
                 except Exception as e:
                     print(e)
                     continue

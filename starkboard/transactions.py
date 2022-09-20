@@ -1,6 +1,6 @@
 import json
 from starkboard.events.events import filter_events
-from starkboard.events.swap import store_swap_events
+from starkboard.events.swap import store_swap_events, fetch_pool_info
 from starkboard.constants import TRANSFER_KEY, SWAP_KEY
 
 ################################1
@@ -31,13 +31,14 @@ def get_transfer_transactions_in_block(events):
         "count_transfer": count_transfer
     }
 
-def get_swap_info_in_block(timestamp, events, starknet_node, db, pool):
+def get_swap_info_in_block(timestamp, events, starknet_node, db, loop):
     """
     Retrieve the list of swaps events in a given block
     """
     swap_events = filter_events(events, SWAP_KEY)
     count_swaps= len(swap_events)
-    store_swap_events(timestamp, swap_events, starknet_node, db, pool)
+    pool_info = fetch_pool_info(swap_events, starknet_node, db, loop)
+    store_swap_events(timestamp, swap_events, pool_info, starknet_node, db)
     return {
         "count_swap": count_swaps
     }

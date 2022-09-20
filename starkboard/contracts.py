@@ -285,54 +285,66 @@ def get_class_info(class_hash, starknet_node, db):
         class_info = get_declared_class(class_hash, starknet_node, db)
     return class_info
 
-def insert_contract_info(contract_address, starknet_node, db):
-    params = contract_address
-    r = starknet_node.post("", method="starknet_getClassHashAt", params=["pending", params])
-    data = json.loads(r.text)
-    if 'error'in data:
-        return data['error']
-    contract_class = db.get_contract_hash(data["result"])
-    if not contract_class:
-        contract_class = get_declared_class(data["result"], starknet_node, db)
+async def insert_contract_info(contract_address, starknet_node, db, class_hash=None):
+    if not class_hash:
+        params = contract_address
+        r = starknet_node.post("", method="starknet_getClassHashAt", params=["pending", params])
+        data = json.loads(r.text)
+        if 'error'in data:
+            return data['error']
+        class_hash = data['result']
+    contract_class = get_class_info(class_hash, starknet_node, db)
+    contract_class = get_class_info(class_hash, starknet_node, db)
+    if contract_class:
+        if contract_class.get('type') == "Proxy":
+            proxy_contract = await get_proxy_contract(contract_address, contract_class.get("abi"), starknet_node, db)
+            abi = proxy_contract.get("abi", "[]")
+            event_keys = proxy_contract.get("event_keys", "[]")
+            contract_type = proxy_contract.get('type')
+        else:
+            abi = contract_class.get("abi", "[]")
+            event_keys = contract_class.get("event_keys", "[]")
+            contract_type = contract_class.get('type')
     newly_contract_found = {
         "contract_address": contract_address,
         "application": "Unknown",
-        "event_keys": contract_class.get("event_keys", "[]"),
-        "abi": contract_class.get("abi", "[]"),
-        "class_hash": data["result"],
-        "type": contract_class.get('type'),
+        "event_keys": event_keys,
+        "abi": abi,
+        "class_hash": class_hash,
+        "type": contract_type,
         "deployed_at": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
     db.insert_contract(newly_contract_found)
     return newly_contract_found
 
-def get_contract_info(contract_address, starknet_node, db):
+async def get_contract_info(contract_address, starknet_node, db, class_hash=None):
     contract_info = db.get_contract(contract_address)
     if not contract_info:
-        contract_info = insert_contract_info(contract_address, starknet_node, db)
+        contract_info = await insert_contract_info(contract_address, starknet_node, db, class_hash)
     return contract_info
 
-def get_pool_info(contract_address, starknet_node, db, loop):
+async def get_pool_info(contract_address, starknet_node, db):
     try:
         client = FullNodeClient(starknet_node.base_url, db.network)
-        contract_info = get_contract_info(contract_address, starknet_node, db)
+        contract_info = await get_contract_info(contract_address, starknet_node, db)
+        print("get contract of pool")
         if contract_info.get('view_info'):
             view_info = json.loads(contract_info.get('view_info'))
             token0_address = view_info.get('token0')
             token1_address = view_info.get('token1')
         else:
             contract = Contract(address=int(contract_address, 16), abi=json.loads(contract_info.get('abi')), client=client)
-            token0_address, token1_address = loop.run_until_complete(get_pool_tokens(contract, db))
-        token0 = get_contract_info(token0_address, starknet_node, db)
+            token0_address, token1_address = await get_pool_tokens(contract, db)
+        token0 = await get_contract_info(token0_address, starknet_node, db)
         token1 = get_contract_info(token1_address, starknet_node, db)
         if token0.get('view_info'):
             token0_info = json.loads(token0.get('view_info'))
         else:
-            token0_info = loop.run_until_complete(insert_token_info(token0_address, client, db))
+            token0_info = await insert_token_info(token0_address, client, db)
         if token1.get('view_info'):
             token1_info = json.loads(token1.get('view_info'))
         else:
-            token1_info = loop.run_until_complete(insert_token_info(token1_address, client, db))
+            token1_info = await insert_token_info(token1_address, client, db)
         pool_info = {
             "token0": token0_address,
             "token0_info": token0_info,
@@ -374,14 +386,14 @@ async def call_implementation(contract, node, db):
     try:
         contract_info = get_class_info(contract_implementation, node, db)
     except:
-        contract_info = get_contract_info(contract_implementation, node, db)
+        contract_info = await get_contract_info(contract_implementation, node, db)
     return contract_info
 
-def get_proxy_contract(contract_address, proxy_abi, node, db, loop):
+async def get_proxy_contract(contract_address, proxy_abi, node, db, loop):
     try:
         client = FullNodeClient(node.base_url, db.network)
         contract = Contract(address=int(contract_address, 16), abi=json.loads(proxy_abi), client=client)
-        contract_info = loop.run_until_complete(call_implementation(contract, node, db))
+        contract_info = await call_implementation(contract, node, db)
         return contract_info
     except Exception as e:
         print(f'Contract {contract_address} is not at Standard.')
