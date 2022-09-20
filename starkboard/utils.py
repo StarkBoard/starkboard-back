@@ -509,10 +509,13 @@ class StarkboardDatabase():
             cursor = self._connection.cursor()
             sql_insert_query = """INSERT INTO ecosystem_contracts(
                     contract_address, application, event_keys, contract_type, class_hash, abi, deployed_at, network
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE
+                    contract_address=%s, application=%s, event_keys=%s, contract_type=%s, class_hash=%s, abi=%s, network=%s"""
             inserted_block = (
                 data["contract_address"], data["application"], data["event_keys"], 
-                data["contract_type"], data["class_hash"], data['abi'], data['deployed_at'], self.network
+                data["contract_type"], data["class_hash"], data['abi'], data['deployed_at'], self.network,
+                data["contract_address"], data["application"], data["event_keys"], 
+                data["contract_type"], data["class_hash"], data['abi'], self.network
             )
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
@@ -546,8 +549,8 @@ class StarkboardDatabase():
     def get_all_contract_hash(self):
         try:
             cursor = self._connection.cursor()
-            sql_insert_query = """SELECT * from contract_class"""
-            cursor.execute(sql_insert_query)
+            sql_insert_query = """SELECT * from contract_class WHERE network=%s"""
+            cursor.execute(sql_insert_query, (self.network))
             res = cursor.fetchall()
             self._connection.commit()
             cursor.close()
@@ -564,6 +567,36 @@ class StarkboardDatabase():
             inserted_block = (class_hash, self.network)
             cursor.execute(sql_insert_query, inserted_block)
             res = cursor.fetchone()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+
+    def get_all_contracts(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """SELECT * from ecosystem_contracts"""
+            cursor.execute(sql_insert_query)
+            res = cursor.fetchall()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    def get_all_proxy_contracts(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """SELECT * from ecosystem_contracts WHERE contract_type=%s AND network=%s"""
+            attributes = ("Proxy", self.network)
+            cursor.execute(sql_insert_query, attributes)
+            res = cursor.fetchall()
             self._connection.commit()
             cursor.close()
             return res

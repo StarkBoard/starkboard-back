@@ -313,6 +313,7 @@ async def insert_contract_info(contract_address, starknet_node, db, class_hash=N
         "abi": abi,
         "class_hash": class_hash,
         "contract_type": contract_type,
+        "type": contract_type,
         "deployed_at": timestamp
     }
     db.insert_contract(newly_contract_found)

@@ -57,11 +57,14 @@ class BlockEventsParser:
         involved_contracts = set([event['from_address'] for event in self.raw_events])
         self.involved_contracts_events = {contract_address: get_events_definition_from_contract(contract_address, self.starknet_node, self.db) for contract_address in involved_contracts}
         for event in self.raw_events:
-            print(f'   > Involed Contract : {event["from_address"]} for a {event["keys"]} Event.')
-            involved_contract_events, involved_contract_structs = self.involved_contracts_events[event['from_address']]
-            involved_contract_event_definition = list(filter(lambda x: x['keys'][0] == int(event['keys'][0], 16), involved_contract_events))[0]
-            event['name'] = involved_contract_event_definition['name']
-            event['transformed_data'] = EventData(event['data'], involved_contract_event_definition['data'], involved_contract_structs)
+            try:
+                involved_contract_events, involved_contract_structs = self.involved_contracts_events[event['from_address']]
+                involved_contract_event_definition = list(filter(lambda x: x['keys'][0] == int(event['keys'][0], 16), involved_contract_events))[0]
+                event['name'] = involved_contract_event_definition['name']
+                event['transformed_data'] = EventData(event['data'], involved_contract_event_definition['data'], involved_contract_structs)
+                print(f'   > Involed Contract : {event["from_address"]} for a {event["name"]} Event.')
+            except Exception as e:
+                print(f'Error while parsing event {event["keys"]} of Contract {event["from_address"]}')
 
 class EventData:
 
@@ -92,7 +95,7 @@ class EventData:
                 "value": value
             }
             self.transformed_data.append(member_value)
-        print(self.transformed_data)
+        print(f'Got Event : {self.transformed_data}')
 
     def build_member_value(self, member):
         current_struct = get_struct(self.structs, member['type'])
