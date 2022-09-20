@@ -18,11 +18,9 @@ def fetch_pool_info(swap_events, starknet_node, db, loop):
     return pool_info
 
 def store_swap_events(timestamp, swap_events, pool_info, starknet_node, db):
-    print(pool_info)
     for event in swap_events:
         try:
             assert len(event["data"]) == 10
-            swap_structure = get_event_structure_from_abi(pool_info[pair_swapped], "Swap")
             block_number = event["block_number"]
             event_key = event["keys"][0]
             tx_hash = event["transaction_hash"]
@@ -51,7 +49,7 @@ def store_swap_events(timestamp, swap_events, pool_info, starknet_node, db):
                 })
             }
             db.insert_events(event_data)
-        except:
+        except Exception as e:
             print(f'[❌ NOT STANDARDIZED  {event["block_number"]}] From Contract : {event["from_address"]}')
             continue
     return

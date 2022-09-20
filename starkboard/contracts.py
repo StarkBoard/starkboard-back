@@ -312,7 +312,7 @@ async def insert_contract_info(contract_address, starknet_node, db, class_hash=N
         "event_keys": event_keys,
         "abi": abi,
         "class_hash": class_hash,
-        "type": contract_type,
+        "contract_type": contract_type,
         "deployed_at": timestamp
     }
     db.insert_contract(newly_contract_found)
@@ -328,7 +328,6 @@ async def get_pool_info(contract_address, starknet_node, db):
     try:
         client = FullNodeClient(starknet_node.base_url, db.network)
         contract_info = await get_contract_info(contract_address, starknet_node, db)
-        print("get contract of pool")
         if contract_info.get('view_info'):
             view_info = json.loads(contract_info.get('view_info'))
             token0_address = view_info.get('token0')
@@ -337,7 +336,7 @@ async def get_pool_info(contract_address, starknet_node, db):
             contract = Contract(address=int(contract_address, 16), abi=json.loads(contract_info.get('abi')), client=client)
             token0_address, token1_address = await get_pool_tokens(contract, db)
         token0 = await get_contract_info(token0_address, starknet_node, db)
-        token1 = get_contract_info(token1_address, starknet_node, db)
+        token1 = await get_contract_info(token1_address, starknet_node, db)
         if token0.get('view_info'):
             token0_info = json.loads(token0.get('view_info'))
         else:
@@ -354,7 +353,7 @@ async def get_pool_info(contract_address, starknet_node, db):
             "abi": json.loads(contract_info.get('abi'))
         }
         return pool_info
-    except:
+    except Exception as e:
         print(f'Contract {contract_address} is not at Standard.')
         return {}
 
