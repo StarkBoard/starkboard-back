@@ -37,10 +37,7 @@ def get_events_definition_from_contract(contract_address, starknet_node, db):
     abi = json.loads(get_contract_info(contract_address, starknet_node, db)['abi'])
     events_abi = list(filter(lambda x: x['type'] == "event", abi))
     struct_abi = list(filter(lambda x: x['type'] == "struct", abi))
-    return {
-        "events": [dict(event, **{'keys': [get_selector_from_name(event['name'])]}) for event in events_abi], 
-        "structs": struct_abi
-    }
+    return [dict(event, **{'keys': [get_selector_from_name(event['name'])]}) for event in events_abi], struct_abi
 
 def get_event_structure_from_abi(abi, event_name):
     return list(filter(lambda x: x['type'] == "event" and x['name'] == event_name, abi))
@@ -59,11 +56,12 @@ class BlockEventsParser:
     def initialize(self):
         involved_contracts = set([event['from_address'] for event in self.raw_events])
         self.involved_contracts_events = {contract_address: get_events_definition_from_contract(contract_address, self.starknet_node, self.db) for contract_address in involved_contracts}
-        print(self.involved_contracts_events)
         for event in self.raw_events:
-            involved_contract_event_definition = list(filter(lambda x: x['events']['keys'] == event['keys'], self.involved_contracts_events[event['from_address']]))[0]
-            event['name'] = involved_contract_event_definition['events']['name']
-            event['transformed_data'] = EventData(event['data'], involved_contract_event_definition['events']['data'], involved_contract_event_definition['structs'])
+            print(f'   > Involed Contract : {event["from_address"]} for a {event["keys"]} Event.')
+            involved_contract_events, involved_contract_structs = self.involved_contracts_events[event['from_address']]
+            involved_contract_event_definition = list(filter(lambda x: x['keys'][0] == int(event['keys'][0], 16), involved_contract_events))[0]
+            event['name'] = involved_contract_event_definition['name']
+            event['transformed_data'] = EventData(event['data'], involved_contract_event_definition['data'], involved_contract_structs)
 
 class EventData:
 
@@ -72,6 +70,8 @@ class EventData:
         self.event_data = []
         self.members = members
         self.structs = structs
+        self.transformed_data = []
+        self.initialize()
 
     def initialize(self):
         for index, member in enumerate(self.members):
@@ -91,8 +91,8 @@ class EventData:
                 "type": member_type,
                 "value": value
             }
-            self.members_data.append(member_value)
-        print(self.members_data)
+            self.transformed_data.append(member_value)
+        print(self.transformed_data)
 
     def build_member_value(self, member):
         current_struct = get_struct(self.structs, member['type'])

@@ -85,9 +85,7 @@ def get_declared_class_in_block(block_txs, node, db):
                     }
                     abi.append(abi_part)
         for k, v in json_code.items():
-            if '__main__' in k and v.get('decorators') and any(decorator in ["constructor"] for decorator in v.get('decorators')):
-                abi_keys.append((k, v.get('decorators'), None))
-            if '__main__' in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators')):
+            if '__main__' in k and v.get('decorators') and any(decorator in ["external", "view", "constructor", "l1_handler"] for decorator in v.get('decorators')):
                 abi_keys.append((k, v.get('decorators'), None))
             elif '__main__' in k and v.get('destination') and any(decorator in ["external", "view"] for decorator in json_code.get(v.get('destination'), {}).get('decorators', {})):
                 abi_keys.append((k, json_code.get(v.get('destination')).get('decorators'), v.get('destination')))
@@ -124,6 +122,8 @@ def get_declared_class_in_block(block_txs, node, db):
                     outputs = [{"name": v.split(':')[0].replace(' ', ''), "type": v.split(':')[1].split('.')[-1]} for v in outputs]
                 if "constructor" in json_code[k].get('decorators'):
                     function_type = "constructor"
+                elif "l1_handler" in json_code[k].get('decorators'):
+                    function_type = "l1_handler"
                 else:
                     function_type = "function"
                 abi_part = {
@@ -187,9 +187,7 @@ def get_declared_class(class_hash, node, db):
                 }
                 abi.append(abi_part)
     for k, v in json_code.items():
-        if '__main__' in k and v.get('decorators') and any(decorator in ["constructor"] for decorator in v.get('decorators')):
-            abi_keys.append((k, v.get('decorators'), None))
-        if '__main__' in k and v.get('decorators') and any(decorator in ["external", "view"] for decorator in v.get('decorators')):
+        if '__main__' in k and v.get('decorators') and any(decorator in ["external", "view", "constructor", "l1_handler"] for decorator in v.get('decorators')):
             abi_keys.append((k, v.get('decorators'), None))
         elif '__main__' in k and v.get('destination') and any(decorator in ["external", "view"] for decorator in json_code.get(v.get('destination'), {}).get('decorators', {})):
             abi_keys.append((k, json_code.get(v.get('destination')).get('decorators'), v.get('destination')))
@@ -226,6 +224,8 @@ def get_declared_class(class_hash, node, db):
                 outputs = [{"name": v.split(':')[0].replace(' ', ''), "type": v.split(':')[1].split('.')[-1]} for v in outputs]
             if "constructor" in json_code[k].get('decorators'):
                 function_type = "constructor"
+            elif "l1_handler" in json_code[k].get('decorators'):
+                function_type = "l1_handler"
             else:
                 function_type = "function"
             abi_part = {
@@ -278,6 +278,12 @@ def get_contract_class_type(abi_keys, event_names):
         if all(a in event_names for a in typed["event_names"]) and all(a in list_functions for a in typed["functions"]):
             return typed["name"]
     return None
+
+def get_class_info(class_hash, starknet_node, db):
+    class_info = db.get_contract_hash(class_hash)
+    if not class_info:
+        class_info = get_declared_class(class_hash, starknet_node, db)
+    return class_info
 
 def insert_contract_info(contract_address, starknet_node, db):
     params = contract_address
@@ -362,5 +368,22 @@ async def get_pool_tokens(contract, db):
     db.insert_contract_view_info(data)
     return token0_address, token1_address
 
-def index_deployed_contract(db):
-    return {}
+async def call_implementation(contract, node, db):
+    (contract_implementation,) = await contract.functions["get_implementation"].call()
+    contract_implementation = decimal_to_hex(contract_implementation)
+    try:
+        contract_info = get_class_info(contract_implementation, node, db)
+    except:
+        contract_info = get_contract_info(contract_implementation, node, db)
+    return contract_info
+
+def get_proxy_contract(contract_address, proxy_abi, node, db, loop):
+    try:
+        client = FullNodeClient(node.base_url, db.network)
+        contract = Contract(address=int(contract_address, 16), abi=json.loads(proxy_abi), client=client)
+        contract_info = loop.run_until_complete(call_implementation(contract, node, db))
+        return contract_info
+    except:
+        print(f'Contract {contract_address} is not at Standard.')
+        return None
+    

@@ -74,13 +74,18 @@ ACCOUNT_STD = {
     "name": "Account",
     "event_names": []
 }
+PROXY_STD = {
+    "functions": ["__default__", "__l1_default__", "get_implementation"], 
+    "name": "Proxy",
+    "event_names": []
+}
 ROUTER_STD = {
     "functions": ["Router", "swap"], 
     "name": "Router",
     "event_names": []
 }
 
-CONTRACT_STANDARDS = [ERC20_LP_STD, ERC4626_STD, ERC20_STD, ERC1155_STD, ERC721_STD, ACCOUNT_STD, ROUTER_STD]
+CONTRACT_STANDARDS = [PROXY_STD, ERC20_LP_STD, ERC4626_STD, ERC20_STD, ERC1155_STD, ERC721_STD, ACCOUNT_STD, ROUTER_STD]
 
 CLASS_HASH_TYPE = {
     "ERC20": ERC20_STD,
@@ -89,7 +94,8 @@ CLASS_HASH_TYPE = {
     "ERC721": ERC721_STD,
     "ERC1155": ERC1155_STD,
     "ERC5626": ERC4626_STD,
-    "Account": ACCOUNT_STD
+    "Account": ACCOUNT_STD,
+    "Proxy": PROXY_STD
 }
 
 APP_NAME = {
