@@ -11,10 +11,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 if __name__ == '__main__':
-    starknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
+    starknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
     staknet_sequencer = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL"), headers={"Content-Type": "application/json"})
-    db = StarkboardDatabase("mainnet")
+    db = StarkboardDatabase("testnet")
     loop = asyncio.get_event_loop()
+    #get_declared_class("0x157ca25c5b23f1d5b389dc3044eddaceb54b061f6586859c2e7cfb36fcdfa6e", starknet_node, db)
     """
     contract_classes = db.get_all_contract_hash()
     for contract_class in contract_classes:
@@ -26,8 +27,10 @@ if __name__ == '__main__':
             get_declared_class(contract_class.get('class_hash'), starknet_node_mainnet, db_mainnet)
     """
     for block in range(340000, 342000):#343056    5082
+        print(block)
         events = get_events(block, starknet_node=starknet_node)
-        block_events = BlockEventsParser(events, starknet_node, db)
+        block_events = BlockEventsParser(events, starknet_node, db, loop)
+        print("___________________")
         #block_transactions = transactions_in_block(block, starknet_node=starknet_node)
         #get_swap_info_in_block(block_transactions['timestamp'], events, starknet_node, db, loop)
         #monitor_deployed_contracts(block_transactions['transactions'], block_transactions['timestamp'], starknet_node, db)

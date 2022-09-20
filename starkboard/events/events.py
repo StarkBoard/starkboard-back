@@ -1,4 +1,5 @@
 import json
+import asyncio
 from starkware.starknet.compiler.compile import get_selector_from_name
 from starkboard.contracts import get_contract_info
 
@@ -33,8 +34,9 @@ def filter_events(events, keys):
     filtered_events = list(filter(lambda event: event['keys'][0] in keys, events))
     return filtered_events
 
-def get_events_definition_from_contract(contract_address, starknet_node, db):
-    abi = json.loads(get_contract_info(contract_address, starknet_node, db)['abi'])
+async def get_events_definition_from_contract(contract_address, starknet_node, db):
+    contract_info = await get_contract_info(contract_address, starknet_node, db)
+    abi = json.loads(contract_info['abi'])
     events_abi = list(filter(lambda x: x['type'] == "event", abi))
     struct_abi = list(filter(lambda x: x['type'] == "struct", abi))
     return [dict(event, **{'keys': [get_selector_from_name(event['name'])]}) for event in events_abi], struct_abi
@@ -47,15 +49,20 @@ def get_struct(structs, name):
 
 class BlockEventsParser:
 
-    def __init__(self, events, starknet_node, db) -> None:
+    def __init__(self, events, starknet_node, db, loop) -> None:
         self.starknet_node = starknet_node
         self.db = db
         self.raw_events = events
+        self.involved_contracts_events = {}
+        self.loop = loop
         self.initialize()
 
     def initialize(self):
         involved_contracts = set([event['from_address'] for event in self.raw_events])
-        self.involved_contracts_events = {contract_address: get_events_definition_from_contract(contract_address, self.starknet_node, self.db) for contract_address in involved_contracts}
+        group = asyncio.gather(*[get_events_definition_from_contract(contract_address, self.starknet_node, self.db) for contract_address in involved_contracts])
+        results = self.loop.run_until_complete(group)
+        for idx, contract in enumerate(involved_contracts):
+            self.involved_contracts_events[contract] = results[idx]
         for event in self.raw_events:
             try:
                 involved_contract_events, involved_contract_structs = self.involved_contracts_events[event['from_address']]
@@ -64,7 +71,8 @@ class BlockEventsParser:
                 event['transformed_data'] = EventData(event['data'], involved_contract_event_definition['data'], involved_contract_structs)
                 print(f'   > Involed Contract : {event["from_address"]} for a {event["name"]} Event.')
             except Exception as e:
-                print(f'Error while parsing event {event["keys"]} of Contract {event["from_address"]}')
+                print(e)
+                print(f'❌ Error while parsing event {event["keys"]} of Contract {event["from_address"]}')
 
 class EventData:
 
@@ -73,20 +81,27 @@ class EventData:
         self.event_data = []
         self.members = members
         self.structs = structs
-        self.transformed_data = []
         self.initialize()
 
     def initialize(self):
         for index, member in enumerate(self.members):
             member_type = member['type']
-            if len(self.members) > index+1 and self.members[index]['type'] == "felt*":
+            if len(self.members) > index+1 and self.members[index+1]['type'].endswith('*'):
                 continue
-            if member['type'] == "felt":
+            if member['type'].endswith('*') and int(self.raw_event_data[0], 16) == 0:
+                value = []
+                self.raw_event_data = self.raw_event_data[1:]
+            elif member['type'] == "felt":
                 value = self.raw_event_data[:1][0]
                 self.raw_event_data = self.raw_event_data[1:]
+            elif member['type'] == "felt*":
+                length = int(self.raw_event_data[0], 16)
+                value = self.raw_event_data[1:length+1]
+                self.raw_event_data = self.raw_event_data[length+1:]
             elif member['type'].endswith('*'):
-                value = self.raw_event_data[:self.members[index-1]]
-                self.raw_event_data = self.raw_event_data[self.members[index-1]:]
+                object_length = int(self.raw_event_data[0], 16)
+                self.raw_event_data = self.raw_event_data[1:]
+                value = [self.build_member_value(member) for i in range(object_length)]
             else:
                 value = self.build_member_value(member)
             member_value = {
@@ -94,23 +109,30 @@ class EventData:
                 "type": member_type,
                 "value": value
             }
-            self.transformed_data.append(member_value)
-        print(f'Got Event : {self.transformed_data}')
+            self.event_data.append(member_value)
 
     def build_member_value(self, member):
         current_struct = get_struct(self.structs, member['type'])
         struct_val = {}
         for index, struct_member in enumerate(current_struct['members']):
-            if len(current_struct['members']) > index+1 and current_struct['members'][index]['type'] == "felt*":
+            if len(current_struct['members']) > index+1 and current_struct['members'][index+1]['type'].endswith('*'):
                 continue
+            elif struct_member['type'].endswith('*') and int(self.raw_event_data[0], 16) == 0:
+                struct_val[struct_member['name']] = []
+                self.raw_event_data = self.raw_event_data[1:]
             if struct_member['type'] == "felt":
                 val = self.raw_event_data[:1][0]
                 self.raw_event_data = self.raw_event_data[1:]
                 struct_val[struct_member['name']] = val
-            elif struct_member['type'].endswith('*'):
-                val = self.raw_event_data[:current_struct['members'][index-1]]
-                self.raw_event_data = self.raw_event_data[current_struct['members'][index-1]:]
+            elif struct_member['type'] == "felt*":
+                length = int(self.raw_event_data[0], 16)
+                val = self.raw_event_data[1:length+1]
+                self.raw_event_data = self.raw_event_data[length+1:]
                 struct_val[struct_member['name']] = val
+            elif struct_member['type'].endswith('*'):
+                object_length = int(self.raw_event_data[0], 16)
+                self.raw_event_data = self.raw_event_data[1:]
+                struct_val[struct_member['name']] = [self.build_member_value(member) for i in range(object_length)]
             else:
                 struct_val[struct_member['name']] = self.build_member_value(struct_member)
         return struct_val

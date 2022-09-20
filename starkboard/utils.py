@@ -236,7 +236,6 @@ class StarkboardDatabase():
             sql_insert_query = f"""SELECT block_number FROM block_data{self._mainnet_suffix} ORDER BY block_number DESC LIMIT 1"""
             cursor.execute(sql_insert_query)
             res = cursor.fetchone()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -259,7 +258,6 @@ class StarkboardDatabase():
                 ORDER BY full_day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -278,7 +276,6 @@ class StarkboardDatabase():
                 ORDER BY full_day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -393,7 +390,6 @@ class StarkboardDatabase():
                 ORDER BY day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchone()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -408,7 +404,6 @@ class StarkboardDatabase():
                 ORDER BY day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -427,7 +422,6 @@ class StarkboardDatabase():
                 ORDER BY t.day ASC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -552,7 +546,6 @@ class StarkboardDatabase():
             sql_insert_query = """SELECT * from contract_class WHERE network=%s"""
             cursor.execute(sql_insert_query, (self.network))
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -567,7 +560,6 @@ class StarkboardDatabase():
             inserted_block = (class_hash, self.network)
             cursor.execute(sql_insert_query, inserted_block)
             res = cursor.fetchone()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -582,7 +574,6 @@ class StarkboardDatabase():
             sql_insert_query = """SELECT * from ecosystem_contracts"""
             cursor.execute(sql_insert_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -597,7 +588,6 @@ class StarkboardDatabase():
             attributes = ("Proxy", self.network)
             cursor.execute(sql_insert_query, attributes)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -612,7 +602,6 @@ class StarkboardDatabase():
             inserted_block = (contract_address, self.network)
             cursor.execute(sql_insert_query, inserted_block)
             res = cursor.fetchone()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -693,7 +682,6 @@ class StarkboardDatabase():
                 ORDER BY full_day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -720,7 +708,6 @@ class StarkboardDatabase():
                 ORDER BY DCD.day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -796,7 +783,6 @@ class StarkboardDatabase():
             sql_get_query = """SELECT * FROM ecosystem"""
             cursor.execute(sql_get_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -811,7 +797,6 @@ class StarkboardDatabase():
             cursor.execute(sql_get_query)
             res = cursor.fetchall()
             res = [dict(app, twitter_handler=app.get('twitter').split('/')[-1]) for app in res]
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -839,7 +824,6 @@ class StarkboardDatabase():
                 ORDER BY fullDay DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -857,7 +841,6 @@ class StarkboardDatabase():
                 ORDER BY fullDay DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -877,7 +860,6 @@ class StarkboardDatabase():
                 ORDER BY fullDay DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -898,7 +880,6 @@ class StarkboardDatabase():
                     ORDER BY day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -919,7 +900,6 @@ class StarkboardDatabase():
                     ORDER BY day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -939,7 +919,6 @@ class StarkboardDatabase():
                 ORDER BY t.day ASC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
@@ -959,7 +938,6 @@ class StarkboardDatabase():
                 ORDER BY t.day ASC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
-            self._connection.commit()
             cursor.close()
             return res
         except Exception as e:
