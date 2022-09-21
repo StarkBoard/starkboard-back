@@ -29,6 +29,9 @@ if __name__ == '__main__':
     for block in range(340000, 342000):#343056    5082
         print(block)
         events = get_events(block, starknet_node=starknet_node)
+        
+        #Oracle Publishers
+        events = list(filter(lambda x: x['from_address'] != "0x12fadd18ec1a23a160cc46981400160fbf4a7a5eed156c4669e39807265bcd4", events))
         block_events = BlockEventsParser(events, starknet_node, db, loop)
         print("___________________")
         #block_transactions = transactions_in_block(block, starknet_node=starknet_node)

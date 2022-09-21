@@ -193,7 +193,6 @@ class StarkboardDatabase():
             sql_insert_query = f"""UPDATE block_data{self._mainnet_suffix} SET count_transfers=%s WHERE block_number=%s;"""
             inserted_block = (count_transfer, block_number)
             cursor.execute(sql_insert_query, inserted_block)
-            self._connection.commit()
             cursor.close()
             return True
         except Exception as e:
@@ -206,7 +205,6 @@ class StarkboardDatabase():
             sql_insert_query = f"""UPDATE block_data{self._mainnet_suffix} SET total_fees=%s, mean_fees=%s WHERE block_number=%s;"""
             inserted_block = (fees.get('total_fees'), fees.get('mean_fees'), block_number)
             cursor.execute(sql_insert_query, inserted_block)
-            self._connection.commit()
             cursor.close()
             return True
         except Exception as e:
@@ -219,7 +217,6 @@ class StarkboardDatabase():
             sql_insert_query = f"""UPDATE block_data{self._mainnet_suffix} SET wallets_active=%s WHERE block_number=%s;"""
             inserted_block = (json.dumps(data.get('wallets_active')), block_number)
             cursor.execute(sql_insert_query, inserted_block)
-            self._connection.commit()
             cursor.close()
             return True
         except Exception as e:
@@ -528,7 +525,6 @@ class StarkboardDatabase():
                 json.dumps(data['view_info']), data['contract_address'], self.network
             )
             cursor.execute(sql_insert_query, inserted_block)
-            self._connection.commit()
             cursor.close()
             return True
         except Exception as e:

@@ -69,9 +69,8 @@ class BlockEventsParser:
                 involved_contract_event_definition = list(filter(lambda x: x['keys'][0] == int(event['keys'][0], 16), involved_contract_events))[0]
                 event['name'] = involved_contract_event_definition['name']
                 event['transformed_data'] = EventData(event['data'], involved_contract_event_definition['data'], involved_contract_structs)
-                print(f'   > Involed Contract : {event["from_address"]} for a {event["name"]} Event.')
+                print(f'🎟️ Contract {event["from_address"]}  emitted a {event["name"]} Event')
             except Exception as e:
-                print(e)
                 print(f'❌ Error while parsing event {event["keys"]} of Contract {event["from_address"]}')
 
 class EventData:
