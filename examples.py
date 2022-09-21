@@ -54,4 +54,3 @@ if __name__ == '__main__':
         #if declared_tx:
         #    print(f'Declared a contract at block {block}')
         #    get_declared_class_in_block(declared_tx, starknet_node, db)
-
