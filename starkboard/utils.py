@@ -638,18 +638,17 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_insert_query = f"""INSERT INTO events_data{self._mainnet_suffix}(
-                    hash_id, timestamp, full_day, block_number, contract_address, event_name, event_key, total_fees, data
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE 
-                    contract_address=%s, event_name=%s, event_key=%s, total_fees=%s, data=%s
+                    timestamp, full_day, block_number, tx_hash, contract_address, event_name, event_key, total_fees, data
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
             inserted_events = []
             for event in list_events:
-                inserted_events.append((
-                event["hash_id"], event["timestamp"], event["full_day"], event["block_number"], 
-                event["contract_address"], event["event_name"], event['event_key'], 
-                event['total_fees'], event['data'], event["contract_address"], event["event_name"], event['event_key'], 
-                event['total_fees'], event['data']
-            ))
+                inserted_event = (
+                    event["timestamp"], event["full_day"], event["block_number"], event["tx_hash"],
+                    event["contract_address"], event["event_name"], event['event_key'], 
+                    event['total_fees'], event['data']
+                )
+                inserted_events.append(inserted_event)
             cursor.executemany(sql_insert_query, inserted_events)
             self._connection.commit()
             cursor.close()

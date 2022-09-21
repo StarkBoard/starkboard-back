@@ -1,6 +1,5 @@
 import json
 import asyncio
-import random
 from datetime import datetime
 from starkware.starknet.compiler.compile import get_selector_from_name
 from starkboard.contracts import get_contract_info
@@ -76,12 +75,12 @@ class BlockEventsParser:
                 event['event_name'] = involved_contract_event_definition['name']
                 event['contract_address'] = raw_event["from_address"]
                 event['block_number'] = raw_event["block_number"]
+                event['tx_hash'] = raw_event["transaction_hash"]
                 event['event_key'] = raw_event['keys'][0]
                 event['timestamp'] = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d %H:%M:%S')
-                event['full_day'] = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d %H:%M:%S')
+                event['full_day'] = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d')
                 event['total_fees'] = self.fees_per_tx[raw_event['transaction_hash']]
-                event['data'] = EventData(raw_event['data'], involved_contract_event_definition['data'], involved_contract_structs).event_data
-                event['hash_id'] = hash(tuple(raw_event['data'])) + hash(event['block_number']) + random.randint(1, 100)
+                event['data'] = json.dumps(EventData(raw_event['data'], involved_contract_event_definition['data'], involved_contract_structs).event_data)
                 print(f'🎟️ Contract {event["contract_address"]}  emitted a {event["event_name"]} Event')
                 self.events.append(event)
             except Exception as e:
