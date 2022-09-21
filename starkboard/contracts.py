@@ -295,13 +295,12 @@ async def insert_contract_info(contract_address, starknet_node, db, class_hash=N
         class_hash = data['result']
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     contract_class = get_class_info(class_hash, starknet_node, db)
-    contract_class = get_class_info(class_hash, starknet_node, db)
     if contract_class:
         if contract_class.get('type') == "Proxy":
             proxy_contract = await get_proxy_contract(contract_address, contract_class.get("abi"), starknet_node, db)
             abi = proxy_contract.get("abi", "[]")
             event_keys = proxy_contract.get("event_keys", "[]")
-            contract_type = proxy_contract.get('type')
+            contract_type = proxy_contract.get('type', proxy_contract.get('contract_type'))
         else:
             abi = contract_class.get("abi", "[]")
             event_keys = contract_class.get("event_keys", "[]")

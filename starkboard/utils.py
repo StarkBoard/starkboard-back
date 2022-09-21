@@ -559,6 +559,7 @@ class StarkboardDatabase():
             cursor.close()
             return res
         except Exception as e:
+            print('ok')
             print(e)
             self._connection = get_connection()
             return False
