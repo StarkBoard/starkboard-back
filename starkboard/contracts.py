@@ -276,7 +276,11 @@ def get_contract_class_type(abi_keys, event_names):
     list_functions = list(map(lambda x: x[0].split('.')[-1], abi_keys))
     for typed in CONTRACT_STANDARDS:
         if all(a in event_names for a in typed["event_names"]) and all(a in list_functions for a in typed["functions"]):
-            return typed["name"]
+            if typed["name"] == "Proxy":
+                if any(a in list_functions for a in ["get_implementation", "implementation", "getImplementation", "get_implementation_hash"]):
+                    return typed["name"]
+            else:
+                return typed["name"]
     return None
 
 def get_class_info(class_hash, starknet_node, db):
@@ -381,7 +385,8 @@ async def get_pool_tokens(contract, db):
     return token0_address, token1_address
 
 async def call_implementation(contract, node, db):
-    (contract_implementation,) = await contract.functions["get_implementation"].call()
+    get_implementation_function = list(filter(lambda x: x in ["get_implementation", "implementation", "getImplementation", "get_implementation_hash"], contract.functions))[0]
+    (contract_implementation,) = await contract.functions[get_implementation_function].call()
     contract_implementation = decimal_to_hex(contract_implementation)
     try:
         contract_info = get_class_info(contract_implementation, node, db)

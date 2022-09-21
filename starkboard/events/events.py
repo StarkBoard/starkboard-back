@@ -1,5 +1,7 @@
 import json
 import asyncio
+import random
+from datetime import datetime
 from starkware.starknet.compiler.compile import get_selector_from_name
 from starkboard.contracts import get_contract_info
 
@@ -49,10 +51,13 @@ def get_struct(structs, name):
 
 class BlockEventsParser:
 
-    def __init__(self, events, starknet_node, db, loop) -> None:
+    def __init__(self, events, timestamp, fees_per_tx, starknet_node, db, loop) -> None:
         self.starknet_node = starknet_node
+        self.fees_per_tx = fees_per_tx
+        self.timestamp = timestamp
         self.db = db
         self.raw_events = events
+        self.events = []
         self.involved_contracts_events = {}
         self.loop = loop
         self.initialize()
@@ -63,15 +68,25 @@ class BlockEventsParser:
         results = self.loop.run_until_complete(group)
         for idx, contract in enumerate(involved_contracts):
             self.involved_contracts_events[contract] = results[idx]
-        for event in self.raw_events:
+        for raw_event in self.raw_events:
             try:
-                involved_contract_events, involved_contract_structs = self.involved_contracts_events[event['from_address']]
-                involved_contract_event_definition = list(filter(lambda x: x['keys'][0] == int(event['keys'][0], 16), involved_contract_events))[0]
-                event['name'] = involved_contract_event_definition['name']
-                event['transformed_data'] = EventData(event['data'], involved_contract_event_definition['data'], involved_contract_structs)
-                print(f'🎟️ Contract {event["from_address"]}  emitted a {event["name"]} Event')
+                event = {}
+                involved_contract_events, involved_contract_structs = self.involved_contracts_events[raw_event['from_address']]
+                involved_contract_event_definition = list(filter(lambda x: x['keys'][0] == int(raw_event['keys'][0], 16), involved_contract_events))[0]
+                event['event_name'] = involved_contract_event_definition['name']
+                event['contract_address'] = raw_event["from_address"]
+                event['block_number'] = raw_event["block_number"]
+                event['event_key'] = raw_event['keys'][0]
+                event['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                event['full_day'] = datetime.now().strftime('%Y-%m-%d')
+                event['total_fees'] = self.fees_per_tx[raw_event['transaction_hash']]
+                event['data'] = EventData(raw_event['data'], involved_contract_event_definition['data'], involved_contract_structs).event_data
+                event['hash_id'] = hash(tuple(raw_event['data'])) + hash(event['block_number']) + random.randint(1, 100)
+                print(f'🎟️ Contract {event["contract_address"]}  emitted a {event["event_name"]} Event')
+                self.events.append(event)
             except Exception as e:
-                print(f'❌ Error while parsing event {event["keys"]} of Contract {event["from_address"]}')
+                print(e)
+                print(f'❌ Error while parsing event {raw_event["keys"]} of Contract {raw_event["from_address"]}')
 
 class EventData:
 
@@ -135,3 +150,6 @@ class EventData:
             else:
                 struct_val[struct_member['name']] = self.build_member_value(struct_member)
         return struct_val
+
+    def normalize(self):
+        pass

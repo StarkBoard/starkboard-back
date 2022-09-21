@@ -29,11 +29,6 @@ def store_swap_events(timestamp, swap_events, pool_info, starknet_node, db):
             user = event["data"][-1]
             event_fees = get_fees_in_tx(tx_hash, starknet_node)
             token_in, token_info_in, amount_in, token_out, token_info_out, amount_out = get_swap_amount_info(event["data"][1:len(event["data"])-1], pool_info[pair_swapped])
-            print('-------')
-            print(tx_hash)
-            print(f'[{block_number}] : Swapped pool {pair_swapped} by {user} on {sender}')
-            print(f'    > {to_unit(amount_in, token_info_in.get("decimals"))} {token_info_in.get("name")} for {to_unit(amount_out, token_info_in.get("decimals"))} {token_info_out.get("name")}')
-            print(f'    > User paid {event_fees} WEI of fees')
             event_data = {
                 "timestamp": datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S'),
                 "full_day": datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d'),

@@ -559,7 +559,7 @@ class StarkboardDatabase():
             cursor.close()
             return res
         except Exception as e:
-            print('ok')
+            print('CCCC')
             print(e)
             self._connection = get_connection()
             return False
@@ -626,6 +626,31 @@ class StarkboardDatabase():
                 data['event_key'], data['data'], self.network
             )
             cursor.execute(sql_insert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    def insert_events_bulk(self, list_events):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = f"""INSERT INTO events_data{self._mainnet_suffix}(
+                    hash_id, timestamp, full_day, block_number, contract_address, event_name, event_key, total_fees, data
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE 
+                    contract_address=%s, event_name=%s, event_key=%s, total_fees=%s, data=%s
+            """
+            inserted_events = []
+            for event in list_events:
+                inserted_events.append((
+                event["hash_id"], event["timestamp"], event["full_day"], event["block_number"], 
+                event["contract_address"], event["event_name"], event['event_key'], 
+                event['total_fees'], event['data'], event["contract_address"], event["event_name"], event['event_key'], 
+                event['total_fees'], event['data']
+            ))
+            cursor.executemany(sql_insert_query, inserted_events)
             self._connection.commit()
             cursor.close()
             return True

@@ -6,11 +6,14 @@ def get_fees_in_block(block_txs, starknet_node=None):
     """
     transactions = [tx for tx in block_txs if tx["type"] not in ["DEPLOY", "DECLARE"]]
     total_fees = 0
+    fee_per_tx = {}
     for transaction in transactions:
         try:
             actual_fee_request = starknet_node.post("", method="starknet_getTransactionReceipt", params=transaction)
             data_tx = json.loads(actual_fee_request.text)
-            total_fees += int(data_tx["result"]["actual_fee"], 16) / 1e18
+            actual_fee = int(data_tx["result"]["actual_fee"], 16) / 1e18
+            total_fees += actual_fee
+            fee_per_tx[transaction['transaction_hash']] = actual_fee
         except Exception as e:
             print(e)
             pass
@@ -20,7 +23,8 @@ def get_fees_in_block(block_txs, starknet_node=None):
         mean_fees = 0
     fees_params = {
         "total_fees": total_fees,
-        "mean_fees": mean_fees
+        "mean_fees": mean_fees,
+        "fee_per_tx": fee_per_tx
     }
     return fees_params
     

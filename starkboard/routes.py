@@ -161,6 +161,7 @@ def get_daily_data():
         res = starkboard_db.get_daily_data(data.get('day', date.today().strftime('%Y-%m-%d')))
     else:
         res = starkboard_db.get_historical_daily_data()
+    starkboard_db.close_connection()
     return {
         'result': res
     }, 200
@@ -175,6 +176,7 @@ def get_daily_tvl_data():
     data = request.get_json()
     starkboard_db = StarkboardDatabase(data.get('network'))
     res = starkboard_db.get_historical_tvl_data(data.get('token'))
+    starkboard_db.close_connection()
     return {
         'result': res
     }, 200
@@ -189,6 +191,7 @@ def get_daily_transfer_data():
     data = request.get_json()
     starkboard_db = StarkboardDatabase(data.get('network'))
     res = starkboard_db.get_historical_transfer_data(data.get('token'))
+    starkboard_db.close_connection()
     return {
         'result': res
     }, 200
@@ -203,6 +206,7 @@ def get_cumulative_metric_evolution():
     data = request.get_json()
     starkboard_db = StarkboardDatabase(data.get('network'))
     res = starkboard_db.get_cummulative_field_data(data.get('field'))
+    starkboard_db.close_connection()
     return {
         'result': res
     }, 200
@@ -217,6 +221,7 @@ def get_token_tvl_evolution():
     data = request.get_json()
     starkboard_db = StarkboardDatabase(data.get('network'))
     res = starkboard_db.get_cummulative_tvl_data(data.get('token'))
+    starkboard_db.close_connection()
     return {
         'result': res
     }, 200
@@ -230,6 +235,7 @@ def get_cummulative_transfer_volume_evolution():
     data = request.get_json()
     starkboard_db = StarkboardDatabase(data.get('network'))
     res = starkboard_db.get_cummulative_transfer_volume_data(data.get('token'))
+    starkboard_db.close_connection()
     return {
         'result': res
     }, 200
@@ -305,6 +311,7 @@ def get_daily_swap_events_data():
         data = request.get_json()
         starkboard_db = StarkboardDatabase(data.get('network', 'testnet'))
         res = starkboard_db.get_historical_daily_swap_data(data.get('contract_address'))
+        starkboard_db.close_connection()
         return {
             'result': res
         }, 200
@@ -327,6 +334,7 @@ def get_core_application():
     try:
         starkboard_db = StarkboardDatabase()
         list_core_applications = get_core_ecosystem(starkboard_db)
+        starkboard_db.close_connection()
         return {
             'result': list_core_applications
         }, 200

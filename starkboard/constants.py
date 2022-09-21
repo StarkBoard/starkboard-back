@@ -75,7 +75,7 @@ ACCOUNT_STD = {
     "event_names": []
 }
 PROXY_STD = {
-    "functions": ["__default__", "__l1_default__", "get_implementation"], 
+    "functions": ["__default__", "__l1_default__"], 
     "name": "Proxy",
     "event_names": []
 }
