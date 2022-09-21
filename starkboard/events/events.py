@@ -77,8 +77,8 @@ class BlockEventsParser:
                 event['contract_address'] = raw_event["from_address"]
                 event['block_number'] = raw_event["block_number"]
                 event['event_key'] = raw_event['keys'][0]
-                event['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                event['full_day'] = datetime.now().strftime('%Y-%m-%d')
+                event['timestamp'] = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
+                event['full_day'] = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d')
                 event['total_fees'] = self.fees_per_tx[raw_event['transaction_hash']]
                 event['data'] = EventData(raw_event['data'], involved_contract_event_definition['data'], involved_contract_structs).event_data
                 event['hash_id'] = hash(tuple(raw_event['data'])) + hash(event['block_number']) + random.randint(1, 100)

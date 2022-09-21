@@ -501,12 +501,12 @@ class StarkboardDatabase():
             sql_insert_query = """INSERT INTO ecosystem_contracts(
                     contract_address, application, event_keys, contract_type, class_hash, abi, deployed_at, network
                 ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE
-                    contract_address=%s, application=%s, event_keys=%s, contract_type=%s, class_hash=%s, abi=%s, network=%s"""
+                    contract_address=%s, application=%s, event_keys=%s, contract_type=%s, class_hash=%s, abi=%s, deployed_at=%s, network=%s"""
             inserted_block = (
                 data["contract_address"], data["application"], data["event_keys"], 
                 data["contract_type"], data["class_hash"], data['abi'], data['deployed_at'], self.network,
                 data["contract_address"], data["application"], data["event_keys"], 
-                data["contract_type"], data["class_hash"], data['abi'], self.network
+                data["contract_type"], data["class_hash"], data['abi'], data['deployed_at'], self.network
             )
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()

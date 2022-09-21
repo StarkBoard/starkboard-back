@@ -56,8 +56,8 @@ def block_tx_fetcher(block_id, node, db, loop):
     get_declared_class_in_block(current_block['transactions'], node, db)
     monitor_deployed_contracts(current_block['transactions'], current_block['timestamp'], node, db, loop)
     filtered_events = list(filter(lambda x: int(x['from_address'], 16) != int("0x12fadd18ec1a23a160cc46981400160fbf4a7a5eed156c4669e39807265bcd4", 16), events))
-    block_events = BlockEventsParser(filtered_events, current_block['timestamp'], fees['fee_per_tx'], node, db, loop)
-    db.insert_events_bulk(block_events)
+    block_events_parser = BlockEventsParser(filtered_events, current_block['timestamp'], fees['fee_per_tx'], node, db, loop)
+    db.insert_events_bulk(block_events_parser.events)
     get_swap_info_in_block(current_block["timestamp"], events, node, db, loop)
     return current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block["block_number"]
 

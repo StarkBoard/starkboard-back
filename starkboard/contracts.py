@@ -298,6 +298,8 @@ async def insert_contract_info(contract_address, starknet_node, db, class_hash=N
             return data['error']
         class_hash = data['result']
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
     contract_class = get_class_info(class_hash, starknet_node, db)
     if contract_class:
         if contract_class.get('type') == "Proxy":
