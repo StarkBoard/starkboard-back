@@ -27,7 +27,8 @@ def normalize_swap(data):
     normalized['amount_1_in'] = hex_string_to_decimal(list(filter(lambda x: all(a in x['name'].lower() for a in ["amount", "1", "in"]) , data))[0].get('value').get('low'))
     normalized['amount_0_out'] = hex_string_to_decimal(list(filter(lambda x: all(a in x['name'].lower() for a in ["amount", "0", "out"]) , data))[0].get('value').get('low'))
     normalized['amount_1_out'] = hex_string_to_decimal(list(filter(lambda x: all(a in x['name'].lower() for a in ["amount", "1", "out"]) , data))[0].get('value').get('low'))
-    return data
+    return normalized
+
 
 def normalize_mint(data):
     normalized = {}
@@ -45,14 +46,14 @@ def normalize_burn(data):
 
 def normalize_sync(data):
     normalized = {}
-    normalized['reserve0'] = hex_string_to_decimal(list(filter(lambda x: 'reserve0' in x['name'], data))[0].get('value').get('low'))
-    normalized['reserve1'] = hex_string_to_decimal(list(filter(lambda x: 'reserve1' in x['name'], data))[0].get('value').get('low'))
+    normalized['reserve0'] = hex_string_to_decimal(list(filter(lambda x: 'reserve0' in x['name'], data))[0].get('value'))
+    normalized['reserve1'] = hex_string_to_decimal(list(filter(lambda x: 'reserve1' in x['name'], data))[0].get('value'))
     return normalized
 
 def normalize_deposit(data):
     normalized = {}
-    normalized['caller'] = list(filter(lambda x: 'to' in x['caller'], data))[0].get('value')
-    normalized['wallet_address_owner'] = list(filter(lambda x: 'to' in x['owner'], data))[0].get('value')
+    normalized['caller'] = list(filter(lambda x: 'caller' in x['name'], data))[0].get('value')
+    normalized['wallet_address_owner'] = list(filter(lambda x: 'owner' in x['name'], data))[0].get('value')
     normalized['assets'] = hex_string_to_decimal(list(filter(lambda x: 'assets' in x['name'], data))[0].get('value').get('low'))
     normalized['shares'] = hex_string_to_decimal(list(filter(lambda x: 'shares' in x['name'], data))[0].get('value').get('low'))
     return normalized
