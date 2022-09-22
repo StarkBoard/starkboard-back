@@ -81,7 +81,11 @@ class BlockEventsParser:
                 event['timestamp'] = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d %H:%M:%S')
                 event['full_day'] = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d')
                 event['total_fees'] = self.fees_per_tx[raw_event['transaction_hash']]
-                event['data'] = json.dumps(EventData(event['event_name'], raw_event['data'], involved_contract_event_definition['data'], involved_contract_structs).event_data)
+                event['data'] = EventData(event['event_name'], raw_event['data'], involved_contract_event_definition['data'], involved_contract_structs).event_data
+                if event['event_name'] == "Transfer":
+                    if event['data'].get('receiver') == "0x46a89ae102987331d369645031b49c27738ed096f2789c24449966da4c6de6b" or event['data'].get('receiver') == "0x5dcd266a80b8a5f29f04d779c6b166b80150c24f2180a75e82427242dab20a9":
+                        raise Exception("Fee Wallet.")
+                event['data'] = json.dumps(event['data'])
                 print(f'🎟️ Contract {event["contract_address"]}  emitted a {event["event_name"]} Event')
                 self.events.append(event)
             except Exception as e:
