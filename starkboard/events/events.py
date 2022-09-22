@@ -3,6 +3,7 @@ import asyncio
 from datetime import datetime
 from starkware.starknet.compiler.compile import get_selector_from_name
 from starkboard.contracts import get_contract_info
+from starkboard.events.normalizer import EventNormalizer
 
 def get_events(block_number, starknet_node):
     """
@@ -80,7 +81,7 @@ class BlockEventsParser:
                 event['timestamp'] = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d %H:%M:%S')
                 event['full_day'] = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d')
                 event['total_fees'] = self.fees_per_tx[raw_event['transaction_hash']]
-                event['data'] = json.dumps(EventData(raw_event['data'], involved_contract_event_definition['data'], involved_contract_structs).event_data)
+                event['data'] = json.dumps(EventData(event['event_name'], raw_event['data'], involved_contract_event_definition['data'], involved_contract_structs).event_data)
                 print(f'🎟️ Contract {event["contract_address"]}  emitted a {event["event_name"]} Event')
                 self.events.append(event)
             except Exception as e:
@@ -89,7 +90,8 @@ class BlockEventsParser:
 
 class EventData:
 
-    def __init__(self, event_data, members, structs) -> None:
+    def __init__(self, event_name, event_data, members, structs) -> None:
+        self.event_name = event_name
         self.raw_event_data = event_data
         self.event_data = []
         self.members = members
@@ -123,6 +125,7 @@ class EventData:
                 "value": value
             }
             self.event_data.append(member_value)
+        self.event_data = EventNormalizer(self.event_name, self.event_data).get_normalized_event()
 
     def build_member_value(self, member):
         current_struct = get_struct(self.structs, member['type'])
@@ -149,15 +152,3 @@ class EventData:
             else:
                 struct_val[struct_member['name']] = self.build_member_value(struct_member)
         return struct_val
-
-    def normalize(self):
-        pass
-
-
-
-[{"name": "sender", "type": "felt", "value": "0x12b063b60553c91ed237d8905dff412fba830c5716b17821063176c6c073341"}, 
-{"name": "amount0In", "type": "Uint256", "value": {"low": "0x0", "high": "0x0"}}, 
-{"name": "amount1In", "type": "Uint256", "value": {"low": "0x38d7ea4c68000", "high": "0x0"}},
- {"name": "amount0Out", "type": "Uint256", "value": {"low": "0x13929", "high": "0x0"}}, 
- {"name": "amount1Out", "type": "Uint256", "value": {"low": "0x0", "high": "0x0"}},
-  {"name": "to", "type": "felt", "value": "0xb8294143a90d4cc6e7659b52061f7cb62dfc5ce62028f0b5e3035439958a26"}]
