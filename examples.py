@@ -1,5 +1,6 @@
 import os
 from starkboard.utils import StarkboardDatabase, Requester
+from starkboard.constants import EVENT_KEYS_RETAINER
 from starkboard.events.events import get_events
 from starkboard.fees import get_fees_in_block
 from starkboard.transactions import transactions_in_block, get_swap_info_in_block
@@ -22,7 +23,7 @@ if __name__ == '__main__':
     staknet_sequencer = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL"), headers={"Content-Type": "application/json"})
     db = StarkboardDatabase("testnet")
     loop = asyncio.get_event_loop()
-    #x = get_declared_class("0x1107e7cdfd67d3db23264327b1de3aa50550aaec7dfc2e6c62c366349255544", starknet_node, db)
+    #x = get_declared_class("0x5a6caca1dcfb2af22d831e678b544e6aa24056a4c35476a8cbbdd8a6ab1f3eb", starknet_node, db)
     #print(x['abi'])
     """
     contract_classes = db.get_all_contract_hash()
@@ -34,10 +35,11 @@ if __name__ == '__main__':
             print(f'getting class hash : {contract_class.get("class_hash")}')
             get_declared_class(contract_class.get('class_hash'), starknet_node_mainnet, db_mainnet)
     """
-    for block in range(344030, 350000):#343056    5082
+    for block in range(344040, 350000):#343056    5082
         events = get_events(block, starknet_node=starknet_node)
         block_transactions = transactions_in_block(block, starknet_node=starknet_node)
         fees = get_fees_in_block(block_transactions['transactions'], starknet_node=starknet_node)
+        events = list(filter(lambda x: x['keys'] in EVENT_KEYS_RETAINER, events))
         #Oracle Publishers
         if args.contract:
             events = list(filter(lambda x: int(x['from_address'], 16) == int(args.contract, 16), events))

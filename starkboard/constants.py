@@ -30,6 +30,19 @@ LIST_EVENT_KEYS = {
     "Withdraw": WITHDRAW_KEY
 }
 
+EVENT_KEYS_RETAINER = [
+    TRANSFER_KEY[0],
+    TRANSFERBATCH_KEY[0],
+    SWAP_KEY[0],
+    MINT_KEY[0],
+    BURN_KEY[0],
+    SYNC_KEY[0],
+    PAIRCREATED_KEY[0],
+    DEPOSIT_KEY[0],
+    WITHDRAW_KEY[0]
+]
+
+
 #################################
 #     Available Wallets Keys    #
 #################################

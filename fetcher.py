@@ -8,6 +8,7 @@ from starkboard.events.events import get_events, BlockEventsParser
 from starkboard.transactions import transactions_in_block, get_transfer_transactions_in_block, get_swap_info_in_block
 from starkboard.user import count_wallet_deploy_in_block, get_active_wallets_in_block
 from starkboard.contracts import count_contract_deployed_in_block, get_declared_class_in_block
+from starkboard.constants import EVENT_KEYS_RETAINER
 from starkboard.tokens import get_eth_total_supply, get_balance_of
 from starkboard.fees import get_fees_in_block
 from monitor import monitor_deployed_contracts
@@ -57,7 +58,8 @@ def block_tx_fetcher(block_id, node, db, loop):
     monitor_deployed_contracts(current_block['transactions'], current_block['timestamp'], node, db, loop)
     filtered_events = list(filter(lambda x: int(x['from_address'], 16) != int("0x12fadd18ec1a23a160cc46981400160fbf4a7a5eed156c4669e39807265bcd4", 16), events))
     block_events_parser = BlockEventsParser(filtered_events, current_block['timestamp'], fees['fee_per_tx'], node, db, loop)
-    #db.insert_events_bulk(block_events_parser.events)
+    formatted_events = list(filter(lambda x: x['event_key'] in EVENT_KEYS_RETAINER, block_events_parser.events))
+    db.insert_events_bulk(formatted_events)
     get_swap_info_in_block(current_block["timestamp"], events, node, db, loop)
     return current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block["block_number"]
 

@@ -4,7 +4,7 @@ def get_fees_in_block(block_txs, starknet_node=None):
     """
     Retrieve the fees of a block
     """
-    transactions = [tx for tx in block_txs if tx["type"] not in ["DEPLOY", "DECLARE"]]
+    transactions = [tx for tx in block_txs if tx["type"] not in ["DEPLOY"]]
     total_fees = 0
     fee_per_tx = {}
     for transaction in transactions:
