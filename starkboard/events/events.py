@@ -152,3 +152,12 @@ class EventData:
 
     def normalize(self):
         pass
+
+
+
+[{"name": "sender", "type": "felt", "value": "0x12b063b60553c91ed237d8905dff412fba830c5716b17821063176c6c073341"}, 
+{"name": "amount0In", "type": "Uint256", "value": {"low": "0x0", "high": "0x0"}}, 
+{"name": "amount1In", "type": "Uint256", "value": {"low": "0x38d7ea4c68000", "high": "0x0"}},
+ {"name": "amount0Out", "type": "Uint256", "value": {"low": "0x13929", "high": "0x0"}}, 
+ {"name": "amount1Out", "type": "Uint256", "value": {"low": "0x0", "high": "0x0"}},
+  {"name": "to", "type": "felt", "value": "0xb8294143a90d4cc6e7659b52061f7cb62dfc5ce62028f0b5e3035439958a26"}]
