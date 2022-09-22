@@ -73,7 +73,8 @@ class EventNormalizer:
         self.data = data
         try:
             self.normalized_data = normalize_switcher[self.event_name](self.data)
-        except:
+        except Exception as e:
+            print(e)
             self.normalized_data = data
 
     def get_normalized_event(self):
