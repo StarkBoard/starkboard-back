@@ -35,11 +35,10 @@ if __name__ == '__main__':
             print(f'getting class hash : {contract_class.get("class_hash")}')
             get_declared_class(contract_class.get('class_hash'), starknet_node_mainnet, db_mainnet)
     """
-    for block in range(344040, 350000):#343056    5082
+    for block in range(345000, 345643):#343056    5082
         events = get_events(block, starknet_node=starknet_node)
         block_transactions = transactions_in_block(block, starknet_node=starknet_node)
         fees = get_fees_in_block(block_transactions['transactions'], starknet_node=starknet_node)
-        events = list(filter(lambda x: x['keys'] in EVENT_KEYS_RETAINER, events))
         #Oracle Publishers
         if args.contract:
             events = list(filter(lambda x: int(x['from_address'], 16) == int(args.contract, 16), events))
@@ -48,7 +47,9 @@ if __name__ == '__main__':
             print('#####################################################################################')
             print(f'#                                     [BLOCK {block}]                                #')
             print('#####################################################################################')
-            block_events = BlockEventsParser(events, block_transactions['timestamp'], fees['fee_per_tx'], starknet_node, db, loop)
+            block_events_parser = BlockEventsParser(events, block_transactions['timestamp'], fees['fee_per_tx'], starknet_node, db, loop)
+            formatted_events = list(filter(lambda x: x['event_key'] in EVENT_KEYS_RETAINER, block_events_parser.events))
+            db.insert_events_bulk(formatted_events)
             print('')
         #get_swap_info_in_block(block_transactions['timestamp'], events, starknet_node, db, loop)
         #monitor_deployed_contracts(block_transactions['transactions'], block_transactions['timestamp'], starknet_node, db)

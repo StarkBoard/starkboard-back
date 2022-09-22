@@ -4,7 +4,7 @@ from starkboard.utils import hex_string_to_decimal
 def normalize_transfer(data):
     normalized = {}
     normalized['sender'] = list(filter(lambda x: any(a in x["name"] for a in ["from", "sender"]), data))[0].get('value')
-    normalized['receiver'] = list(filter(lambda x: any(a == x["name"] for a in ["recipient", "to", "to_", "_to"]), data))[0].get('value')
+    normalized['receiver'] = list(filter(lambda x: any(a == x["name"] for a in ["recipient", "to", "to_", "_to", "to_address"]), data))[0].get('value')
     try:
         normalized['amount'] = hex_string_to_decimal(list(filter(lambda x: any(a in x["name"] for a in ["value", "amount"]), data))[0].get('value').get('low'))
     except:
@@ -18,7 +18,6 @@ def normalize_transfer(data):
     else:
         normalized['type'] = "Transfer"
     return normalized
-
 
 def normalize_swap(data):
     normalized = {}
@@ -46,8 +45,12 @@ def normalize_burn(data):
 
 def normalize_sync(data):
     normalized = {}
-    normalized['reserve0'] = hex_string_to_decimal(list(filter(lambda x: 'reserve0' in x['name'], data))[0].get('value'))
-    normalized['reserve1'] = hex_string_to_decimal(list(filter(lambda x: 'reserve1' in x['name'], data))[0].get('value'))
+    try:
+        normalized['reserve0'] = hex_string_to_decimal(list(filter(lambda x: 'reserve0' in x['name'], data))[0].get('value'))
+        normalized['reserve1'] = hex_string_to_decimal(list(filter(lambda x: 'reserve1' in x['name'], data))[0].get('value'))
+    except:
+        normalized['reserve0'] = hex_string_to_decimal(list(filter(lambda x: 'reserve0' in x['name'], data))[0].get('value').get('low'))
+        normalized['reserve1'] = hex_string_to_decimal(list(filter(lambda x: 'reserve1' in x['name'], data))[0].get('value').get('low'))
     return normalized
 
 def normalize_deposit(data):
