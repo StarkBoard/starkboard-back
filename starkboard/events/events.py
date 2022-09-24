@@ -85,6 +85,10 @@ class BlockEventsParser:
                 if event['event_name'] == "Transfer":
                     if event['data'].get('receiver') == "0x46a89ae102987331d369645031b49c27738ed096f2789c24449966da4c6de6b" or event['data'].get('receiver') == "0x5dcd266a80b8a5f29f04d779c6b166b80150c24f2180a75e82427242dab20a9":
                         raise Exception("Fee Wallet.")
+                    elif event['data'][0] == '0x0':
+                        event['event_name'] = "Mint"
+                    elif event['data'][1] == '0x0':
+                        event['event_name'] = "Burn"
                 event['data'] = json.dumps(event['data'])
                 print(f'🎟️ Contract {event["contract_address"]}  emitted a {event["event_name"]} Event')
                 self.events.append(event)
