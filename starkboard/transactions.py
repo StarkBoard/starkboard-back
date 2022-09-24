@@ -1,6 +1,7 @@
 import json
 from starkboard.events.events import filter_events
 from starkboard.events.swap import store_swap_events, fetch_pool_info
+from starkboard.events.transfer import store_transfer_events
 from starkboard.constants import TRANSFER_KEY, SWAP_KEY
 
 ################################1
@@ -20,6 +21,16 @@ def transactions_in_block(block_id="latest", starknet_node=None):
         return data['error']
     return data["result"]
 
+def get_transfer_info_in_block(timestamp, events, starknet_node, db, loop):
+    """
+    Retrieves the list of transfer events in a given block
+    """
+    transfer_events = filter_events(events, TRANSFER_KEY)
+    count_transfers = len(transfer_events)
+    store_transfer_events(timestamp, transfer_events, starknet_node, db)
+    return {
+        "count_swap": count_transfers
+    }
 
 def get_transfer_transactions_in_block(events):
     """
