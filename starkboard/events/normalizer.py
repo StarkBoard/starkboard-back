@@ -61,8 +61,30 @@ def normalize_deposit(data):
     normalized['shares'] = hex_string_to_decimal(list(filter(lambda x: 'shares' in x['name'], data))[0].get('value').get('low'))
     return normalized
 
+def normalize_transfer_single(data):
+    normalized = {}
+    normalized['sender'] = list(filter(lambda x: any(a in x["name"] for a in ["from", "sender"]), data))[0].get('value')
+    normalized['receiver'] = list(filter(lambda x: any(a == x["name"] for a in ["recipient", "to", "to_", "_to", "to_address"]), data))[0].get('value')
+    normalized['caller'] = list(filter(lambda x: 'operator' in x['name'], data))[0].get('value')
+    normalized['amount'] = hex_string_to_decimal(list(filter(lambda x: 'amount' in x['name'], data))[0].get('value').get('low'))
+    normalized['token_id'] = hex_string_to_decimal(list(filter(lambda x: 'token' in x['name'], data))[0].get('value').get('low'))
+    return normalized
+
+def normalize_transfer_batch(data):
+    normalized = {}
+    normalized['sender'] = list(filter(lambda x: any(a in x["name"] for a in ["from", "sender"]), data))[0].get('value')
+    normalized['receiver'] = list(filter(lambda x: any(a == x["name"] for a in ["recipient", "to", "to_", "_to", "to_address"]), data))[0].get('value')
+    normalized['caller'] = list(filter(lambda x: 'operator' in x['name'], data))[0].get('value')
+    normalized['ids'] = list(filter(lambda x: 'ids' in x['name'], data))[0].get('value')
+    normalized['ids'] = [hex_string_to_decimal(id_.get('low')) for id_ in normalized['ids']]
+    normalized['amounts'] = list(filter(lambda x: 'amounts' in x['name'], data))[0].get('value')
+    normalized['amounts'] = [hex_string_to_decimal(amount.get('low')) for amount in normalized['amounts']]
+    return normalized
+
 normalize_switcher = {
     "Transfer": normalize_transfer,
+    "TransferSingle": normalize_transfer_single,
+    "TransferBatch": normalize_transfer_batch,
     "Swap": normalize_swap,
     "Mint": normalize_mint,
     "Burn": normalize_burn,

@@ -47,7 +47,7 @@ def get_event_structure_from_abi(abi, event_name):
     return list(filter(lambda x: x['type'] == "event" and x['name'] == event_name, abi))
 
 def get_struct(structs, name):
-    return list(filter(lambda x: x['name'] == name, structs))[0]
+    return list(filter(lambda x: x['name'] in name, structs))[0]
 
 class BlockEventsParser:
 
