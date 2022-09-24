@@ -322,6 +322,9 @@ async def insert_contract_info(contract_address, starknet_node, db, class_hash=N
         "deployed_at": timestamp
     }
     db.insert_contract(newly_contract_found)
+    if contract_type == "ERC20":
+        client = FullNodeClient(starknet_node.base_url, db.network)
+        await insert_token_info(contract_address, client, db)
     return newly_contract_found
 
 async def get_contract_info(contract_address, starknet_node, db, class_hash=None, timestamp=None):
