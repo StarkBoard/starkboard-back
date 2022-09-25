@@ -50,7 +50,7 @@ def normalize_sync(data):
         normalized['reserve1'] = hex_string_to_decimal(list(filter(lambda x: all(a in x['name'].lower() for a in ["reserve", "1"]), data))[0].get('value'))
     except:
         normalized['reserve0'] = hex_string_to_decimal(list(filter(lambda x: all(a in x['name'].lower() for a in ["reserve", "0"]), data))[0].get('value').get('low'))
-        normalized['reserve1'] = hex_string_to_decimal(list(filter(lambda x: all(a in x['name'].lower() for a in ["reserve", "1"]))[0].get('value').get('low'))
+        normalized['reserve1'] = hex_string_to_decimal(list(filter(lambda x: all(a in x['name'].lower() for a in ["reserve", "1"]), data))[0].get('value').get('low'))
     return normalized
 
 def normalize_deposit(data):
