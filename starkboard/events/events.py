@@ -82,6 +82,7 @@ class BlockEventsParser:
                 event['full_day'] = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d')
                 event['total_fees'] = self.fees_per_tx[raw_event['transaction_hash']]
                 event['data'] = EventData(event['event_name'], raw_event['data'], involved_contract_event_definition['data'], involved_contract_structs).event_data
+                print('a')
                 if event['event_name'] == "Transfer":
                     if event['data'].get('receiver') == "0x46a89ae102987331d369645031b49c27738ed096f2789c24449966da4c6de6b" or event['data'].get('receiver') == "0x5dcd266a80b8a5f29f04d779c6b166b80150c24f2180a75e82427242dab20a9":
                         raise Exception("Fee Wallet.")
