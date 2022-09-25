@@ -525,6 +525,7 @@ class StarkboardDatabase():
                 json.dumps(data['view_info']), data['contract_address'], self.network
             )
             cursor.execute(sql_insert_query, inserted_block)
+            self._connection.commit()
             cursor.close()
             return True
         except Exception as e:
