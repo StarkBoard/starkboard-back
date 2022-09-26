@@ -17,6 +17,7 @@ def fetch_pool_info(swap_events, starknet_node, db, loop):
         pool_info[contract] = results[idx]
     return pool_info
 
+'''
 def store_swap_events(timestamp, swap_events, pool_info, starknet_node, db):
     for event in swap_events:
         try:
@@ -48,3 +49,4 @@ def store_swap_events(timestamp, swap_events, pool_info, starknet_node, db):
             print(f'[❌ NOT STANDARDIZED  {event["block_number"]}] From Contract : {event["from_address"]}')
             continue
     return
+'''

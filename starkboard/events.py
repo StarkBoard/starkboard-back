@@ -36,6 +36,7 @@ def filter_events(events, keys):
     filtered_events = list(filter(lambda event: event['keys'][0] in keys, events))
     return filtered_events
 
+'''
 def store_swap_events(timestamp, swap_events, starknet_node, db, pool):
     pool_contracts = list(set(map(lambda event: event["from_address"], swap_events)))
     pool_info = {contract_address: get_pool_info(contract_address, starknet_node, db, pool) for contract_address in pool_contracts}
@@ -74,3 +75,4 @@ def store_swap_events(timestamp, swap_events, starknet_node, db, pool):
             print(f'[❌ NOT STANDARDIZED  {event["block_number"]}] From Contract : {event["from_address"]}')
             continue
     return
+'''

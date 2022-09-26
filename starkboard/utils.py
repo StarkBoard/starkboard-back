@@ -141,9 +141,9 @@ class StarkboardDatabase():
     """
     Starkboard MySQL Database handler
     """
-    def __init__(self, newtork='testnet'):
-        self.network = newtork
-        if newtork == "mainnet":
+    def __init__(self, network='testnet'):
+        self.network = network
+        if network == "mainnet":
             self._mainnet_suffix = "_mainnet"
         else:
             self._mainnet_suffix = ""
@@ -837,6 +837,28 @@ class StarkboardDatabase():
     def get_daily_tvl_data_from_blocks(self):
         try:
             cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT full_day AS day, contract_address AS token,
+                SUM(CASE
+                    WHEN JSON_EXTRACT(data, "$.type") = 'Mint' THEN JSON_EXTRACT(data, "$.amount") / POW(10, 18)
+                    WHEN JSON_EXTRACT(data, "$.type") = 'Burn' THEN JSON_EXTRACT(data, "$.amount") * -1 / POW(10, 18)
+                    ELSE 0
+                    END) AS amount,
+                COUNT(DISTINCT(CASE WHEN JSON_EXTRACT(data, "$.type") = 'Mint' THEN tx_hash ELSE NULL END)) AS count_deposit,
+                COUNT(DISTINCT(CASE WHEN JSON_EXTRACT(data, "$.type") = 'Burn' THEN tx_hash ELSE NULL END)) AS count_withdraw
+                FROM events_data{self._mainnet_suffix}
+                WHERE event_name = "Transfer" AND JSON_EXTRACT(data, "$.type") IN ("Mint", "Burn") AND JSON_EXTRACT(data, "$.amount")
+                GROUP BY day, token
+                ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+        '''
+        try:
+            cursor = self._connection.cursor()
             sql_select_query = f"""SELECT fullDay as day, token,
                 SUM(CASE WHEN type = 'deposit' THEN value ELSE -value END) as amount,
                 SUM(CASE WHEN type = 'deposit' THEN 1 ELSE 0 END) as count_deposit,
@@ -851,8 +873,25 @@ class StarkboardDatabase():
         except Exception as e:
             print(e)
             return False
+        '''
 
     def get_daily_average_deposit_data_from_blocks(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT full_day AS day, contract_address AS token,
+                AVG(JSON_EXTRACT(data, "$.amount") / POW(10, 18)) AS avg_deposit
+                FROM events_data{self._mainnet_suffix}
+                WHERE event_name = "Transfer" AND JSON_EXTRACT(data, "$.type") = "Mint" AND JSON_EXTRACT(data, "$.amount")
+                GROUP BY day, token
+                ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+        '''
         try:
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT fullDay as day, token,
@@ -868,8 +907,45 @@ class StarkboardDatabase():
         except Exception as e:
             print(e)
             return False
+        '''
+
+    def get_daily_average_withdrawal_data_from_blocks(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT full_day AS day, contract_address AS token,
+                AVG(JSON_EXTRACT(data, "$.amount") / POW(10, 18)) AS avg_withdrawal
+                FROM events_data{self._mainnet_suffix}
+                WHERE event_name = "Transfer" AND JSON_EXTRACT(data, "$.type") = "Burn" AND JSON_EXTRACT(data, "$.amount")
+                GROUP BY day, token
+                ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
 
     def get_daily_transfer_data_from_blocks(self):
+        try:
+            cursor = self._connection.cursor()
+            sql_select_query = f"""SELECT full_day AS day, contract_address AS token,
+                SUM(JSON_EXTRACT(data, "$.amount") / POW(10, 18)) AS amount,
+                AVG(JSON_EXTRACT(data, "$.amount") / POW(10, 18)) AS avg_transfer,
+                COUNT(DISTINCT(tx_hash)) AS count_transfer,
+                MAX(JSON_EXTRACT(data, "$.amount") / POW(10,18)) AS max_transfer
+                FROM events_data{self._mainnet_suffix}
+                WHERE event_name = "Transfer" AND JSON_EXTRACT(data, "$.type") = "Transfer" AND JSON_EXTRACT(data, "$.amount")
+                GROUP BY day, token
+                ORDER BY day DESC"""
+            cursor.execute(sql_select_query)
+            res = cursor.fetchall()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+        '''
         try:
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT fullDay as day, token,
@@ -887,6 +963,7 @@ class StarkboardDatabase():
         except Exception as e:
             print(e)
             return False
+        '''
 
     def get_historical_tvl_data(self, token):
         try:
