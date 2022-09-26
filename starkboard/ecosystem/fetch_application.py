@@ -1,6 +1,5 @@
 import os
 import json
-from starkboard.utils import StarkboardDatabase, Requester
 
 
 def update_core_ecosystem(db):
@@ -26,18 +25,6 @@ def update_core_ecosystem(db):
         db.insert_ecosystem_offchain(final_app)
     print("Success !")
     return None
-
-def get_starknet_ecosystem_db_token():
-    headers = {'Content-Type': 'application/json'}
-    data = {
-        "client_id": os.environ.get('STARKNET_ECOSYSTEM_DB_CLIENT_ID'),
-        "client_secret": os.environ.get('STARKNET_ECOSYSTEM_DB_CLIENT_SECRET'),
-        "audience": "https://starknet-db",
-        "grant_type": "client_credentials"
-    }
-    starknet_db_auth = Requester(os.environ.get('STARKNET_ECOSYSTEM_DB_AUTH')).post(params=data, headers=headers).json()
-    starknet_db_access_token = starknet_db_auth.get('access_token')
-    return starknet_db_access_token
 
 def get_core_ecosystem(db):
     res = db.get_ecosystem_offchain()
