@@ -1,5 +1,6 @@
 import os
 import tweepy
+from starkboard.utils import Requester
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -37,3 +38,16 @@ def get_twitter_apiv1_auth():
 	except Exception as e:
 		print('Twitter Failed authentication')
 		return None
+
+
+def get_starknet_ecosystem_db_token():
+    headers = {'Content-Type': 'application/json'}
+    data = {
+        "client_id": os.environ.get('STARKNET_ECOSYSTEM_DB_CLIENT_ID'),
+        "client_secret": os.environ.get('STARKNET_ECOSYSTEM_DB_CLIENT_SECRET'),
+        "audience": "https://starknet-db",
+        "grant_type": "client_credentials"
+    }
+    starknet_db_auth = Requester(os.environ.get('STARKNET_ECOSYSTEM_DB_AUTH')).post(url="", params=data, headers=headers).json()
+    starknet_db_access_token = starknet_db_auth.get('access_token')
+    return starknet_db_access_token
