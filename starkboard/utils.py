@@ -837,16 +837,17 @@ class StarkboardDatabase():
     def get_daily_tvl_data_from_blocks(self):
         try:
             cursor = self._connection.cursor()
-            sql_select_query = f"""SELECT full_day AS day, contract_address AS token,
+            sql_select_query = f"""SELECT ed.full_day AS day, ed.contract_address AS token,
                 SUM(CASE
-                    WHEN JSON_EXTRACT(data, "$.type") = 'Mint' THEN JSON_EXTRACT(data, "$.amount") / POW(10, 18)
-                    WHEN JSON_EXTRACT(data, "$.type") = 'Burn' THEN JSON_EXTRACT(data, "$.amount") * -1 / POW(10, 18)
+                    WHEN JSON_EXTRACT(ed.data, "$.type") = 'Mint' THEN JSON_EXTRACT(ed.data, "$.amount") / POW(10, JSON_EXTRACT(ec.view_info, "$.decimals"))
+                    WHEN JSON_EXTRACT(ed.data, "$.type") = 'Burn' THEN JSON_EXTRACT(ed.data, "$.amount") * -1 / POW(10, JSON_EXTRACT(ec.view_info, "$.decimals"))
                     ELSE 0
                     END) AS amount,
-                COUNT(DISTINCT(CASE WHEN JSON_EXTRACT(data, "$.type") = 'Mint' THEN tx_hash ELSE NULL END)) AS count_deposit,
-                COUNT(DISTINCT(CASE WHEN JSON_EXTRACT(data, "$.type") = 'Burn' THEN tx_hash ELSE NULL END)) AS count_withdraw
-                FROM events_data{self._mainnet_suffix}
-                WHERE event_name = "Transfer" AND JSON_EXTRACT(data, "$.type") IN ("Mint", "Burn") AND JSON_EXTRACT(data, "$.amount")
+                COUNT(DISTINCT(CASE WHEN JSON_EXTRACT(ed.data, "$.type") = 'Mint' THEN tx_hash ELSE NULL END)) AS count_deposit,
+                COUNT(DISTINCT(CASE WHEN JSON_EXTRACT(ed.data, "$.type") = 'Burn' THEN tx_hash ELSE NULL END)) AS count_withdraw
+                FROM events_data{self._mainnet_suffix} ed
+                INNER JOIN ecosystem_contracts ec ON ec.contract_address = ed.contract_address
+                WHERE event_name = "Transfer" AND JSON_EXTRACT(ed.data, "$.type") IN ("Mint", "Burn") AND JSON_EXTRACT(ed.data, "$.amount")
                 GROUP BY day, token
                 ORDER BY day DESC"""
             cursor.execute(sql_select_query)
@@ -878,10 +879,11 @@ class StarkboardDatabase():
     def get_daily_average_deposit_data_from_blocks(self):
         try:
             cursor = self._connection.cursor()
-            sql_select_query = f"""SELECT full_day AS day, contract_address AS token,
-                AVG(JSON_EXTRACT(data, "$.amount") / POW(10, 18)) AS avg_deposit
-                FROM events_data{self._mainnet_suffix}
-                WHERE event_name = "Transfer" AND JSON_EXTRACT(data, "$.type") = "Mint" AND JSON_EXTRACT(data, "$.amount")
+            sql_select_query = f"""SELECT ed.full_day AS day, ed.contract_address AS token,
+                AVG(JSON_EXTRACT(ed.data, "$.amount") / POW(10, JSON_EXTRACT(ec.view_info, "$.decimals"))) AS avg_deposit
+                FROM events_data{self._mainnet_suffix} ed
+                INNER JOIN ecosystem_contracts ec ON ec.contract_address = ed.contract_address
+                WHERE event_name = "Transfer" AND JSON_EXTRACT(ed.data, "$.type") = "Mint" AND JSON_EXTRACT(ed.data, "$.amount")
                 GROUP BY day, token
                 ORDER BY day DESC"""
             cursor.execute(sql_select_query)
@@ -912,10 +914,11 @@ class StarkboardDatabase():
     def get_daily_average_withdrawal_data_from_blocks(self):
         try:
             cursor = self._connection.cursor()
-            sql_select_query = f"""SELECT full_day AS day, contract_address AS token,
-                AVG(JSON_EXTRACT(data, "$.amount") / POW(10, 18)) AS avg_withdrawal
-                FROM events_data{self._mainnet_suffix}
-                WHERE event_name = "Transfer" AND JSON_EXTRACT(data, "$.type") = "Burn" AND JSON_EXTRACT(data, "$.amount")
+            sql_select_query = f"""SELECT ed.full_day AS day, ed.contract_address AS token,
+                AVG(JSON_EXTRACT(ed.data, "$.amount") / POW(10, JSON_EXTRACT(ec.view_info, "$.decimals"))) AS avg_withdrawal
+                FROM events_data{self._mainnet_suffix} ed
+                INNER JOIN ecosystem_contracts ec ON ec.contract_address = ed.contract_address
+                WHERE event_name = "Transfer" AND JSON_EXTRACT(ed.data, "$.type") = "Burn" AND JSON_EXTRACT(ed.data, "$.amount")
                 GROUP BY day, token
                 ORDER BY day DESC"""
             cursor.execute(sql_select_query)
@@ -929,13 +932,14 @@ class StarkboardDatabase():
     def get_daily_transfer_data_from_blocks(self):
         try:
             cursor = self._connection.cursor()
-            sql_select_query = f"""SELECT full_day AS day, contract_address AS token,
-                SUM(JSON_EXTRACT(data, "$.amount") / POW(10, 18)) AS amount,
-                AVG(JSON_EXTRACT(data, "$.amount") / POW(10, 18)) AS avg_transfer,
+            sql_select_query = f"""SELECT ed.full_day AS day, ed.contract_address AS token,
+                SUM(JSON_EXTRACT(ed.data, "$.amount") / POW(10, JSON_EXTRACT(ec.view_info, "$.decimals"))) AS amount,
+                AVG(JSON_EXTRACT(ed.data, "$.amount") / POW(10, JSON_EXTRACT(ec.view_info, "$.decimals"))) AS avg_transfer,
                 COUNT(DISTINCT(tx_hash)) AS count_transfer,
-                MAX(JSON_EXTRACT(data, "$.amount") / POW(10,18)) AS max_transfer
-                FROM events_data{self._mainnet_suffix}
-                WHERE event_name = "Transfer" AND JSON_EXTRACT(data, "$.type") = "Transfer" AND JSON_EXTRACT(data, "$.amount")
+                MAX(JSON_EXTRACT(ed.data, "$.amount") / POW(10, JSON_EXTRACT(ec.view_info, "$.decimals"))) AS max_transfer
+                FROM events_data{self._mainnet_suffix} ed
+                INNER JOIN ecosystem_contracts ec ON ec.contract_address = ed.contract_address
+                WHERE event_name = "Transfer" AND JSON_EXTRACT(ed.data, "$.type") = "Transfer" AND JSON_EXTRACT(ed.data, "$.amount")
                 GROUP BY day, token
                 ORDER BY day DESC"""
             cursor.execute(sql_select_query)
