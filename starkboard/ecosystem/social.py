@@ -71,7 +71,5 @@ def socials_offchain_metrics():
                 "socialActivity": 0,
                 "date": datetime.now().strftime('%Y-%m-%dT%H:%M:%S') + datetime.now().strftime('.%f')[:4] + 'Z'
             }
-            print(data)
-            insert_res = starknet_db.post(url=f"projects/{app.get('id')}/social-metrics", params=data, headers=headers)
-            print(insert_res.text)
-            print(f'Retrieved Social metrics for {twitter_handle}')
+            starknet_db.post(url=f"projects/{app.get('id')}/social-metrics", params=data, headers=headers)
+            print(f'Retrieved Social metrics for {twitter_handle} ({app.get("id")})')
