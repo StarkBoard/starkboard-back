@@ -834,7 +834,7 @@ class StarkboardDatabase():
     # Getters
     #
 
-    def get_daily_tvl_data_from_blocks(self):
+    def get_daily_tvl_data_from_blocks_v2(self):
         try:
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT ed.full_day AS day, ed.contract_address AS token,
@@ -857,7 +857,9 @@ class StarkboardDatabase():
         except Exception as e:
             print(e)
             return False
-        '''
+
+
+    def get_daily_tvl_data_from_blocks(self):
         try:
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT fullDay as day, token,
@@ -874,9 +876,8 @@ class StarkboardDatabase():
         except Exception as e:
             print(e)
             return False
-        '''
 
-    def get_daily_average_deposit_data_from_blocks(self):
+    def get_daily_average_deposit_data_from_blocks_v2(self):
         try:
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT ed.full_day AS day, ed.contract_address AS token,
@@ -893,7 +894,8 @@ class StarkboardDatabase():
         except Exception as e:
             print(e)
             return False
-        '''
+
+    def get_daily_average_deposit_data_from_blocks(self):
         try:
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT fullDay as day, token,
@@ -909,7 +911,6 @@ class StarkboardDatabase():
         except Exception as e:
             print(e)
             return False
-        '''
 
     def get_daily_average_withdrawal_data_from_blocks(self):
         try:
@@ -929,7 +930,7 @@ class StarkboardDatabase():
             print(e)
             return False
 
-    def get_daily_transfer_data_from_blocks(self):
+    def get_daily_transfer_data_from_blocks_v2(self):
         try:
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT ed.full_day AS day, ed.contract_address AS token,
@@ -949,7 +950,8 @@ class StarkboardDatabase():
         except Exception as e:
             print(e)
             return False
-        '''
+
+    def get_daily_transfer_data_from_blocks(self):
         try:
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT fullDay as day, token,
@@ -967,7 +969,6 @@ class StarkboardDatabase():
         except Exception as e:
             print(e)
             return False
-        '''
 
     def get_historical_tvl_data(self, token):
         try:
