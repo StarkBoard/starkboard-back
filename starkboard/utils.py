@@ -143,10 +143,6 @@ class StarkboardDatabase():
     """
     def __init__(self, network='testnet'):
         self.network = network
-        if network == "mainnet":
-            self._mainnet_suffix = "_mainnet"
-        else:
-            self._mainnet_suffix = ""
         self._connection = get_connection()
 
     def close_connection(self):
@@ -173,10 +169,10 @@ class StarkboardDatabase():
     def insert_block_data(self, data):
         try:
             cursor = self._connection.cursor()
-            sql_insert_query = f"""INSERT INTO block_data{self._mainnet_suffix}(
-                    block_number, timestamp, full_day, count_txs, count_new_wallets, count_new_contracts, count_transfers, total_fees, mean_fees, wallets_active
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s, %s)"""
-            inserted_block = (data["block_number"], data["timestamp"], data["full_day"], data["count_txs"], 
+            sql_insert_query = f"""INSERT INTO block_data(
+                    network, block_number, timestamp, full_day, count_txs, count_new_wallets, count_new_contracts, count_transfers, total_fees, mean_fees, wallets_active
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+            inserted_block = (self.network, data["block_number"], data["timestamp"], data["full_day"], data["count_txs"],
                 data["count_new_wallets"], data["count_new_contracts"], data["count_transfers"], data["total_fees"], data["mean_fees"], json.dumps(data["wallets_active"]))
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
@@ -190,8 +186,10 @@ class StarkboardDatabase():
     def update_block_data(self, block_number, count_transfer):
         try:
             cursor = self._connection.cursor()
-            sql_insert_query = f"""UPDATE block_data{self._mainnet_suffix} SET count_transfers=%s WHERE block_number=%s;"""
-            inserted_block = (count_transfer, block_number)
+            sql_insert_query = f"""UPDATE block_data
+                WHERE network=%s AND block_number=%s
+                SET count_transfers=%s;"""
+            inserted_block = (self.network, block_number, count_transfer)
             cursor.execute(sql_insert_query, inserted_block)
             cursor.close()
             return True
@@ -202,8 +200,10 @@ class StarkboardDatabase():
     def update_block_fees(self, block_number, fees):
         try:
             cursor = self._connection.cursor()
-            sql_insert_query = f"""UPDATE block_data{self._mainnet_suffix} SET total_fees=%s, mean_fees=%s WHERE block_number=%s;"""
-            inserted_block = (fees.get('total_fees'), fees.get('mean_fees'), block_number)
+            sql_insert_query = f"""UPDATE block_data
+                WHERE network=%s AND block_number=%s
+                SET total_fees=%s, mean_fees=%s;"""
+            inserted_block = (self.network, block_number, fees.get('total_fees'), fees.get('mean_fees'))
             cursor.execute(sql_insert_query, inserted_block)
             cursor.close()
             return True
@@ -214,8 +214,10 @@ class StarkboardDatabase():
     def update_block_users(self, block_number, data):
         try:
             cursor = self._connection.cursor()
-            sql_insert_query = f"""UPDATE block_data{self._mainnet_suffix} SET wallets_active=%s WHERE block_number=%s;"""
-            inserted_block = (json.dumps(data.get('wallets_active')), block_number)
+            sql_insert_query = f"""UPDATE block_data
+                WHERE network=%s AND block_number=%s
+                SET wallets_active=%s;"""
+            inserted_block = (self.network, block_number, json.dumps(data.get('wallets_active')))
             cursor.execute(sql_insert_query, inserted_block)
             cursor.close()
             return True
@@ -230,7 +232,10 @@ class StarkboardDatabase():
     def get_checkpoint_block(self):
         try:
             cursor = self._connection.cursor()
-            sql_insert_query = f"""SELECT block_number FROM block_data{self._mainnet_suffix} ORDER BY block_number DESC LIMIT 1"""
+            sql_insert_query = f"""SELECT block_number
+                FROM block_data
+                WHERE network="{self.network}"
+                ORDER BY block_number DESC LIMIT 1"""
             cursor.execute(sql_insert_query)
             res = cursor.fetchone()
             cursor.close()
@@ -250,7 +255,8 @@ class StarkboardDatabase():
                 SUM(total_fees) as total_fees,
                 SUM(total_fees) / SUM(count_txs) as mean_fees,
                 GROUP_CONCAT(wallets_active SEPARATOR ',') as list_wallets_active
-                FROM block_data{self._mainnet_suffix}
+                FROM block_data
+                WHERE network="{self.network}"
                 GROUP BY full_day
                 ORDER BY full_day DESC"""
             cursor.execute(sql_select_query)
@@ -267,8 +273,8 @@ class StarkboardDatabase():
             cursor.execute("SET SESSION group_concat_max_len = 10000000;")
             sql_select_query = f"""SELECT full_day as day,
                 GROUP_CONCAT(wallets_active SEPARATOR ',') as list_wallets_active
-                FROM block_data{self._mainnet_suffix}
-                WHERE full_day between DATE_SUB(now(),INTERVAL 4 WEEK) and now()
+                FROM block_data
+                WHERE network="{self.network}" AND full_day between DATE_SUB(now(),INTERVAL 4 WEEK) and now()
                 GROUP BY full_day
                 ORDER BY full_day DESC"""
             cursor.execute(sql_select_query)
@@ -286,8 +292,8 @@ class StarkboardDatabase():
     def delete_old_block_data(self, date):
         try:
             cursor = self._connection.cursor()
-            sql_delete_query = f"""DELETE FROM block_data{self._mainnet_suffix}
-                WHERE full_day < '{date}'"""
+            sql_delete_query = f"""DELETE FROM block_data
+                WHERE network="{self.network}" AND full_day < '{date}'"""
             cursor.execute(sql_delete_query)
             self._connection.commit()
             cursor.close()
@@ -307,13 +313,13 @@ class StarkboardDatabase():
     def insert_daily_data(self, data):
         try:
             cursor = self._connection.cursor()
-            sql_upsert_query = f"""INSERT INTO daily_data{self._mainnet_suffix}(
-                day, count_txs, count_new_wallets, count_new_contracts, count_transfers, total_fees, mean_fees, count_wallets_active, top_wallets_active
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
+            sql_upsert_query = f"""INSERT INTO daily_data (
+                network, day, count_txs, count_new_wallets, count_new_contracts, count_transfers, total_fees, mean_fees, count_wallets_active, top_wallets_active
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE
                 day=%s, count_txs=%s, count_new_wallets=%s, count_new_contracts=%s, count_transfers=%s, total_fees=%s, mean_fees=%s, count_wallets_active=%s, top_wallets_active=%s
             """
             inserted_block = (
-                data["day"], data["count_txs"], data["count_new_wallets"], data["count_new_contracts"], 
+                self.network, data["day"], data["count_txs"], data["count_new_wallets"], data["count_new_contracts"],
                 data["count_transfers"], data["total_fees"], data["mean_fees"], data["count_wallets_active"], json.dumps(data["top_wallets_active"]),
                 data["day"], data["count_txs"], data["count_new_wallets"], data["count_new_contracts"], 
                 data["count_transfers"], data["total_fees"], data["mean_fees"], data["count_wallets_active"], json.dumps(data["top_wallets_active"])
@@ -330,13 +336,13 @@ class StarkboardDatabase():
     def insert_daily_tvl_data(self, data):
         try:
             cursor = self._connection.cursor()
-            sql_upsert_query = f"""INSERT INTO daily_mints{self._mainnet_suffix}(
-                day, token, amount, avg_deposit, count_deposit, count_withdraw
-                ) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
+            sql_upsert_query = f"""INSERT INTO daily_mints(
+                network, day, token, amount, avg_deposit, count_deposit, count_withdraw
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE
                 day=%s, token=%s, amount=%s, avg_deposit=%s, count_deposit=%s, count_withdraw=%s
             """
             inserted_block = (
-                data["day"], data["token"], 
+                self.network, data["day"], data["token"],
                 data["amount"], data["avg_deposit"], data["count_deposit"], data["count_withdraw"],
                 data["day"], data["token"], 
                 data["amount"], data["avg_deposit"], data["count_deposit"], data["count_withdraw"],
@@ -354,13 +360,13 @@ class StarkboardDatabase():
     def insert_daily_transfers_data(self, data):
         try:
             cursor = self._connection.cursor()
-            sql_upsert_query = f"""INSERT INTO daily_transfers{self._mainnet_suffix}(
-                day, token, amount, avg_transfer, count_transfer, max_transfer
+            sql_upsert_query = f"""INSERT INTO daily_transfers (
+                network, day, token, amount, avg_transfer, count_transfer, max_transfer
                 ) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
                 day=%s, token=%s, amount=%s, avg_transfer=%s, count_transfer=%s, max_transfer=%s
             """
             inserted_block = (
-                data["day"], data["token"], 
+                self.network, data["day"], data["token"],
                 data["amount"], data["avg_transfer"], data["count_transfer"], data["max_transfer"],
                 data["day"], data["token"], 
                 data["amount"], data["avg_transfer"], data["count_transfer"], data["max_transfer"],
@@ -382,8 +388,8 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT *
-                FROM daily_data{self._mainnet_suffix}
-                WHERE day = '{date}'
+                FROM daily_data
+                WHERE network="{self.network}" AND day = '{date}'
                 ORDER BY day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchone()
@@ -397,7 +403,8 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT *
-                FROM daily_data{self._mainnet_suffix}
+                FROM daily_data
+                WHERE network="{self.network}"
                 ORDER BY day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
@@ -412,10 +419,11 @@ class StarkboardDatabase():
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT t.day, (
                     SELECT SUM({field}) 
-                    FROM daily_data{self._mainnet_suffix} t2
-                    WHERE t2.day <= t.day
+                    FROM daily_data t2
+                    WHERE network="{self.network}" AND t2.day <= t.day
                 ) as aggregated_amount
-                FROM daily_data{self._mainnet_suffix} t
+                FROM daily_data t
+                WHERE network="{self.network}"
                 ORDER BY t.day ASC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
@@ -479,12 +487,12 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_insert_query = """INSERT INTO contract_class(
-                    class_hash, type, abi, event_names, event_keys, network
+                    network, class_hash, type, abi, event_names, event_keys
                 ) VALUES (%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE
-                    class_hash=%s, type=%s, abi=%s, event_names=%s, event_keys=%s, network=%s"""
+                    class_hash=%s, type=%s, abi=%s, event_names=%s, event_keys=%s"""
             inserted_block = (
-                data["class_hash"], data["type"], data["abi"], data["event_names"], data["event_keys"], self.network,
-                data["class_hash"], data["type"], data["abi"], data["event_names"], data["event_keys"], self.network
+                self.network, data["class_hash"], data["type"], data["abi"], data["event_names"], data["event_keys"],
+                data["class_hash"], data["type"], data["abi"], data["event_names"], data["event_keys"]
             )
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
@@ -499,14 +507,14 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_insert_query = """INSERT INTO ecosystem_contracts(
-                    contract_address, application, event_keys, contract_type, class_hash, abi, deployed_at, network
+                    network, contract_address, application, event_keys, contract_type, class_hash, abi, deployed_at
                 ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE
-                    contract_address=%s, application=%s, event_keys=%s, contract_type=%s, class_hash=%s, abi=%s, deployed_at=%s, network=%s"""
+                    contract_address=%s, application=%s, event_keys=%s, contract_type=%s, class_hash=%s, abi=%s, deployed_at=%s"""
             inserted_block = (
+                self.network, data["contract_address"], data["application"], data["event_keys"],
+                data["contract_type"], data["class_hash"], data['abi'], data['deployed_at'],
                 data["contract_address"], data["application"], data["event_keys"], 
-                data["contract_type"], data["class_hash"], data['abi'], data['deployed_at'], self.network,
-                data["contract_address"], data["application"], data["event_keys"], 
-                data["contract_type"], data["class_hash"], data['abi'], data['deployed_at'], self.network
+                data["contract_type"], data["class_hash"], data['abi'], data['deployed_at']
             )
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
@@ -541,7 +549,7 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_insert_query = """SELECT * from contract_class WHERE network=%s"""
-            cursor.execute(sql_insert_query, (self.network))
+            cursor.execute(sql_insert_query, self.network)
             res = cursor.fetchall()
             cursor.close()
             return res
@@ -569,8 +577,8 @@ class StarkboardDatabase():
     def get_all_contracts(self):
         try:
             cursor = self._connection.cursor()
-            sql_insert_query = """SELECT * from ecosystem_contracts"""
-            cursor.execute(sql_insert_query)
+            sql_insert_query = """SELECT * from ecosystem_contracts WHERE network=%s"""
+            cursor.execute(sql_insert_query, self.network)
             res = cursor.fetchall()
             cursor.close()
             return res
@@ -619,12 +627,12 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_insert_query = """INSERT INTO contract_data(
-                    timestamp, full_day, contract_address, block_number, wallet_address, total_fee, event_key, data, network
+                    network, timestamp, full_day, contract_address, block_number, wallet_address, total_fee, event_key, data
                 ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
             inserted_block = (
-                data["timestamp"], data["full_day"], data["contract_address"], 
+                self.network, data["timestamp"], data["full_day"], data["contract_address"],
                 data["block_number"], data["wallet_address"], data['total_fee'], 
-                data['event_key'], data['data'], self.network
+                data['event_key'], data['data']
             )
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
@@ -638,14 +646,14 @@ class StarkboardDatabase():
     def insert_events_bulk(self, list_events):
         try:
             cursor = self._connection.cursor()
-            sql_insert_query = f"""INSERT INTO events_data{self._mainnet_suffix}(
-                    timestamp, full_day, block_number, tx_hash, contract_address, event_name, event_key, total_fees, data
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            sql_insert_query = f"""INSERT INTO events_data(
+                    network, timestamp, full_day, block_number, tx_hash, contract_address, event_name, event_key, total_fees, data
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
             inserted_events = []
             for event in list_events:
                 inserted_event = (
-                    event["timestamp"], event["full_day"], event["block_number"], event["tx_hash"],
+                    self.network, event["timestamp"], event["full_day"], event["block_number"], event["tx_hash"],
                     event["contract_address"], event["event_name"], event['event_key'], 
                     event['total_fees'], event['data']
                 )
@@ -663,15 +671,15 @@ class StarkboardDatabase():
         try:
             cursor = self._connection.cursor()
             sql_upsert_query = f"""INSERT INTO daily_contract_data(
-                day, contract_address, event_key, count, total_fee, count_users, data, network
+                network, day, contract_address, event_key, count, total_fee, count_users, data
                 ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE    
-                day=%s, contract_address=%s, event_key=%s, count=%s, total_fee=%s, count_users=%s, data=%s, network=%s
+                day=%s, contract_address=%s, event_key=%s, count=%s, total_fee=%s, count_users=%s, data=%s
             """
             inserted_events = (
+                self.network, data["day"], data["contract_address"], data["event_key"], data["count"],
+                data["total_fee"], data["count_users"], data["data"],
                 data["day"], data["contract_address"], data["event_key"], data["count"], 
-                data["total_fee"], data["count_users"], data["data"], self.network,
-                data["day"], data["contract_address"], data["event_key"], data["count"], 
-                data["total_fee"], data["count_users"], data["data"], self.network
+                data["total_fee"], data["count_users"], data["data"]
             )
             cursor.execute(sql_upsert_query, inserted_events)
             self._connection.commit()
@@ -725,7 +733,7 @@ class StarkboardDatabase():
                 REPLACE(JSON_EXTRACT(EC.view_info, "$.token0"),'"','') as token0_address,
                 REPLACE(JSON_EXTRACT(EC.view_info, "$.token1"),'"','') as token1_address
                 FROM daily_contract_data as DCD
-                INNER JOIN ecosystem_contracts as EC ON DCD.contract_address=EC.contract_address
+                INNER JOIN ecosystem_contracts as EC ON EC.network="{self.network}" AND DCD.contract_address=EC.contract_address
                 WHERE DCD.event_key="{SWAP_KEY[0]}" AND DCD.network="{self.network}"{filter_statement}
                 ORDER BY DCD.day DESC"""
             cursor.execute(sql_select_query)
@@ -845,9 +853,9 @@ class StarkboardDatabase():
                     END) AS amount,
                 COUNT(DISTINCT(CASE WHEN JSON_EXTRACT(ed.data, "$.type") = 'Mint' THEN tx_hash ELSE NULL END)) AS count_deposit,
                 COUNT(DISTINCT(CASE WHEN JSON_EXTRACT(ed.data, "$.type") = 'Burn' THEN tx_hash ELSE NULL END)) AS count_withdraw
-                FROM events_data{self._mainnet_suffix} ed
-                INNER JOIN ecosystem_contracts ec ON ec.contract_address = ed.contract_address
-                WHERE event_name = "Transfer" AND JSON_EXTRACT(ed.data, "$.type") IN ("Mint", "Burn") AND JSON_EXTRACT(ed.data, "$.amount")
+                FROM events_data ed
+                INNER JOIN ecosystem_contracts ec ON ec.network="{self.network}" AND ec.contract_address = ed.contract_address
+                WHERE network="{self.network}" AND event_name = "Transfer" AND JSON_EXTRACT(ed.data, "$.type") IN ("Mint", "Burn") AND JSON_EXTRACT(ed.data, "$.amount")
                 GROUP BY day, token
                 ORDER BY day DESC"""
             cursor.execute(sql_select_query)
@@ -866,7 +874,8 @@ class StarkboardDatabase():
                 SUM(CASE WHEN type = 'deposit' THEN value ELSE -value END) as amount,
                 SUM(CASE WHEN type = 'deposit' THEN 1 ELSE 0 END) as count_deposit,
                 SUM(CASE WHEN type = 'deposit' THEN 0 ELSE 1 END) as count_withdraw
-                FROM mints{self._mainnet_suffix}
+                FROM mints
+                WHERE network="{self.network}"
                 GROUP BY fullDay, token
                 ORDER BY fullDay DESC"""
             cursor.execute(sql_select_query)
@@ -882,9 +891,9 @@ class StarkboardDatabase():
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT ed.full_day AS day, ed.contract_address AS token,
                 AVG(JSON_EXTRACT(ed.data, "$.amount") / POW(10, JSON_EXTRACT(ec.view_info, "$.decimals"))) AS avg_deposit
-                FROM events_data{self._mainnet_suffix} ed
-                INNER JOIN ecosystem_contracts ec ON ec.contract_address = ed.contract_address
-                WHERE event_name = "Transfer" AND JSON_EXTRACT(ed.data, "$.type") = "Mint" AND JSON_EXTRACT(ed.data, "$.amount")
+                FROM events_data ed
+                INNER JOIN ecosystem_contracts ec ON ec.network="{self.network}" AND ec.contract_address = ed.contract_address
+                WHERE network="{self.network}" AND event_name = "Transfer" AND JSON_EXTRACT(ed.data, "$.type") = "Mint" AND JSON_EXTRACT(ed.data, "$.amount")
                 GROUP BY day, token
                 ORDER BY day DESC"""
             cursor.execute(sql_select_query)
@@ -900,8 +909,8 @@ class StarkboardDatabase():
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT fullDay as day, token,
                 AVG(value) as avg_deposit
-                FROM mints{self._mainnet_suffix}
-                WHERE type = 'deposit'
+                FROM mints
+                WHERE network="{self.network}" AND type = 'deposit'
                 GROUP BY fullDay, token
                 ORDER BY fullDay DESC"""
             cursor.execute(sql_select_query)
@@ -917,9 +926,9 @@ class StarkboardDatabase():
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT ed.full_day AS day, ed.contract_address AS token,
                 AVG(JSON_EXTRACT(ed.data, "$.amount") / POW(10, JSON_EXTRACT(ec.view_info, "$.decimals"))) AS avg_withdrawal
-                FROM events_data{self._mainnet_suffix} ed
-                INNER JOIN ecosystem_contracts ec ON ec.contract_address = ed.contract_address
-                WHERE event_name = "Transfer" AND JSON_EXTRACT(ed.data, "$.type") = "Burn" AND JSON_EXTRACT(ed.data, "$.amount")
+                FROM events_data ed
+                INNER JOIN ecosystem_contracts ec ON ec.network="{self.network}" AND ec.contract_address = ed.contract_address
+                WHERE network="{self.network}" AND event_name = "Transfer" AND JSON_EXTRACT(ed.data, "$.type") = "Burn" AND JSON_EXTRACT(ed.data, "$.amount")
                 GROUP BY day, token
                 ORDER BY day DESC"""
             cursor.execute(sql_select_query)
@@ -938,9 +947,9 @@ class StarkboardDatabase():
                 AVG(JSON_EXTRACT(ed.data, "$.amount") / POW(10, JSON_EXTRACT(ec.view_info, "$.decimals"))) AS avg_transfer,
                 COUNT(DISTINCT(tx_hash)) AS count_transfer,
                 MAX(JSON_EXTRACT(ed.data, "$.amount") / POW(10, JSON_EXTRACT(ec.view_info, "$.decimals"))) AS max_transfer
-                FROM events_data{self._mainnet_suffix} ed
-                INNER JOIN ecosystem_contracts ec ON ec.contract_address = ed.contract_address
-                WHERE event_name = "Transfer" AND JSON_EXTRACT(ed.data, "$.type") = "Transfer" AND JSON_EXTRACT(ed.data, "$.amount")
+                FROM events_data ed
+                INNER JOIN ecosystem_contracts ec ON ec.network="{self.network}" AND ec.contract_address = ed.contract_address
+                WHERE network="{self.network}" event_name = "Transfer" AND JSON_EXTRACT(ed.data, "$.type") = "Transfer" AND JSON_EXTRACT(ed.data, "$.amount")
                 GROUP BY day, token
                 ORDER BY day DESC"""
             cursor.execute(sql_select_query)
@@ -959,7 +968,8 @@ class StarkboardDatabase():
                 AVG(value) as avg_transfer,
                 COUNT(*) as count_transfer,
                 MAX(value) as max_transfer
-                FROM transfers{self._mainnet_suffix}
+                FROM transfers
+                WHERE network="{self.network}"
                 GROUP BY fullDay, token
                 ORDER BY fullDay DESC"""
             cursor.execute(sql_select_query)
@@ -975,12 +985,13 @@ class StarkboardDatabase():
             cursor = self._connection.cursor()
             if token:
                 sql_select_query = f"""SELECT *
-                    FROM daily_mints{self._mainnet_suffix}
-                    WHERE token = '{token}'
+                    FROM daily_mints
+                    WHERE network="{self.network}" AND token = '{token}'
                     ORDER BY day DESC"""
             else:
                 sql_select_query = f"""SELECT *
-                    FROM daily_mints{self._mainnet_suffix}
+                    FROM daily_mints
+                    WHERE network="{self.network}"
                     ORDER BY day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
@@ -995,12 +1006,13 @@ class StarkboardDatabase():
             cursor = self._connection.cursor()
             if token:
                 sql_select_query = f"""SELECT *
-                    FROM daily_transfers{self._mainnet_suffix}
-                    WHERE token = '{token}'
+                    FROM daily_transfers
+                    WHERE network="{self.network}" AND token = '{token}'
                     ORDER BY day DESC"""
             else:
                 sql_select_query = f"""SELECT *
-                    FROM daily_transfers{self._mainnet_suffix}
+                    FROM daily_transfers
+                    WHERE network="{self.network}"
                     ORDER BY day DESC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
@@ -1015,11 +1027,11 @@ class StarkboardDatabase():
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT t.day, (
                     SELECT SUM(amount) 
-                    FROM daily_mints{self._mainnet_suffix} t2
-                    WHERE t2.day <= t.day and t2.token = '{token}'
+                    FROM daily_mints t2
+                    WHERE network="{self.network}" AND t2.day <= t.day AND t2.token = '{token}'
                 ) as aggregated_amount, t.token
-                FROM daily_mints{self._mainnet_suffix} t
-                WHERE t.token = '{token}'
+                FROM daily_mints t
+                WHERE network="{self.network}" AND t.token = '{token}'
                 ORDER BY t.day ASC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
@@ -1034,11 +1046,11 @@ class StarkboardDatabase():
             cursor = self._connection.cursor()
             sql_select_query = f"""SELECT t.day, (
                     SELECT SUM(amount) 
-                    FROM daily_transfers{self._mainnet_suffix} t2
-                    WHERE t2.day <= t.day and t2.token = '{token}'
+                    FROM daily_transfers t2
+                    WHERE network="{self.network}" AND t2.day <= t.day AND t2.token = '{token}'
                 ) as aggregated_amount, t.token
-                FROM daily_transfers{self._mainnet_suffix} t
-                WHERE t.token = '{token}'
+                FROM daily_transfers t
+                WHERE network="{self.network}" AND t.token = '{token}'
                 ORDER BY t.day ASC"""
             cursor.execute(sql_select_query)
             res = cursor.fetchall()
