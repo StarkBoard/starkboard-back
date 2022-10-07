@@ -4,7 +4,7 @@ from starkboard.constants import EVENT_KEYS_RETAINER
 from starkboard.events.events import get_events
 from starkboard.fees import get_fees_in_block
 from starkboard.tokens import insert_token_info
-from starkboard.transactions import transactions_in_block, get_swap_info_in_block
+from starkboard.transactions import transactions_in_block
 from starkboard.contracts import get_declared_class_in_block, get_declared_class, get_proxy_contract
 from starkboard.ecosystem.auth import get_starknet_ecosystem_db_token
 from monitor import monitor_deployed_contracts
@@ -28,6 +28,9 @@ async def fetch_contract_info():
         print(res)
     return None
 
+
+
+
 if __name__ == '__main__':
 
     args = parser.parse_args()
@@ -35,11 +38,16 @@ if __name__ == '__main__':
     staknet_sequencer = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL"), headers={"Content-Type": "application/json"})
     db = StarkboardDatabase("testnet")
     loop = asyncio.get_event_loop()
-    print(get_starknet_ecosystem_db_token())
+    auth = get_starknet_ecosystem_db_token()
     
+
+
+
+
     #x = get_declared_class("0x5a6caca1dcfb2af22d831e678b544e6aa24056a4c35476a8cbbdd8a6ab1f3eb", starknet_node, db)
     #print(x['abi'])
     #loop.run_until_complete(fetch_contract_info())
+    """
     for block in range(340719, 345000):#347613
         events = get_events(block, starknet_node=starknet_node)
         block_transactions = transactions_in_block(block, starknet_node=starknet_node)
@@ -57,9 +65,9 @@ if __name__ == '__main__':
             formatted_events = list(filter(lambda x: x['event_key'] in EVENT_KEYS_RETAINER, block_events_parser.events))
             db.insert_events_bulk(formatted_events)
             print('')
-        #get_swap_info_in_block(block_transactions['timestamp'], events, starknet_node, db, loop)
         #monitor_deployed_contracts(block_transactions['transactions'], block_transactions['timestamp'], starknet_node, db)
         #declared_tx = [tx for tx in block_transactions['transactions'] if tx["type"] == "DECLARE"]
         #if declared_tx:
         #    print(f'Declared a contract at block {block}')
         #    get_declared_class_in_block(declared_tx, starknet_node, db)
+    """

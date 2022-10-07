@@ -1,11 +1,14 @@
-# StarkBoard API
+# StarkBoard Indexer & API
 
-On and Off chain data of StarkNet within a single Flask API
+A - Starkboard competitive indexer
+
+B - On and Off chain data of StarkNet within a single Flask API
+
+
 
 ## Installation Setup
 
 - Python >=3.8
-
 
 ```
 python -m venv starkboard-env
@@ -14,7 +17,7 @@ pip install --upgrade pip
 CFLAGS=-I`brew --prefix gmp`/include LDFLAGS=-L`brew --prefix gmp`/lib pip install -r requirements.txt
 ```
 
-## Scripts
+## A - Indexer Scripts
 
 - Fetching and archiving Block data from block
 ```
@@ -37,7 +40,7 @@ python etl.py
 ```
 
 
-## Launch API
+## B - Launch API
 
 - Development
 ```
