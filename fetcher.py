@@ -60,6 +60,7 @@ def block_tx_fetcher(block_id, node, db, loop):
     block_events_parser = BlockEventsParser(filtered_events, current_block['timestamp'], fees['fee_per_tx'], node, db, loop)
     formatted_events = list(filter(lambda x: x['event_key'] in EVENT_KEYS_RETAINER, block_events_parser.events))
     db.insert_events_bulk(formatted_events)
+#   get_transactions_info_in_block # get the different events counts and fees
 #    get_swap_info_in_block(current_block["timestamp"], events, node, db, loop)
     return current_block, wallet_deployed, contract_deployed, transfer_executed, fees, active_wallets, current_block["block_number"]
 
@@ -136,13 +137,13 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.network == "mainnet":
         delay = 30
-        staknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
-        staknet_sequencer = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL_MAINNET"), headers={"Content-Type": "application/json"})
+        starknet_node = Requester(os.environ.get("STARKNET_NODE_URL_MAINNET"), headers={"Content-Type": "application/json"})
+        starknet_sequencer = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL_MAINNET"), headers={"Content-Type": "application/json"})
     else:
-        staknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
-        staknet_sequencer = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL"), headers={"Content-Type": "application/json"})
+        starknet_node = Requester(os.environ.get("STARKNET_NODE_URL"), headers={"Content-Type": "application/json"})
+        starknet_sequencer = Requester(os.environ.get("STARKNET_FEEDER_GATEWAY_URL"), headers={"Content-Type": "application/json"})
         delay = 5
     starkboard_db = StarkboardDatabase(args.network)
     if args.block_data:
         last_checked_block = fetch_checkpoint(starkboard_db)
-        rt = RepeatedTimer(delay, block_aggreg_fetcher, starkboard_db, staknet_node)
+        rt = RepeatedTimer(delay, block_aggreg_fetcher, starkboard_db, starknet_node)
