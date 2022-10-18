@@ -59,7 +59,7 @@ eb deploy
 
 ## Documentation
 
-Route returing error will always return a dict : 
+Route returning error will always return a dict : 
 ```
 {
     'error': 'err msg'
@@ -68,9 +68,32 @@ Route returing error will always return a dict :
 
 ### Mint / NFT / Users
 
+- `/storeNewsletter` [POST]
+Stores an email address in the newsletter
+
+1. Headers
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| Content-Type  |   application/json      |
+| Accept  |   application/json      |
+
+2. Data (JSON)
+
+| Key  | Value          |
+| :--------------- |:---------------:|
+| email_address  |   String: email_address to store     |
+
+3. Return
+
+```
+{
+    'result': 'Successfully inserted "email@address.com" in the newsletter'
+}
+```
 
 - `/storeStarkboardOg` [POST]
-Store an OG to StarkBoard Database
+Stores an OG to StarkBoard Database
 
 1. Headers
 
@@ -96,7 +119,7 @@ Store an OG to StarkBoard Database
 
 
 - `/getStarkboardOg` [POST]
-Retrieve a OG to StarkBoard Database
+Retrieve an OG to StarkBoard Database
 
 1. Headers
 
