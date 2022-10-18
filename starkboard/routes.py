@@ -24,6 +24,36 @@ wallets_3, leaves_3 = whitelist(StarkboardDatabase(), 2)
 #    General Route    #
 #######################
 
+@app_routes.route('/storeNewsletter', methods=['POST'])
+@require_appkey
+def store_newsletter():
+    """
+    Stores an email address in the newsletter
+    """
+    try:
+        data = request.get_json()
+        starkboard_db = StarkboardDatabase()
+        insert_res = starkboard_db.insert_newsletter(data)
+        if insert_res:
+            starkboard_db.close_connection()
+            return {
+                'result': f'Successfully inserted "{data["email_address"]}" in the newsletter'
+            }, 200
+        else:
+            res = starkboard_db.get_newsletter(data)
+            starkboard_db.close_connection()
+            if not res:
+                return {
+                    'error': 'Insert in newsletter Error'
+                }, 400
+            else:
+                return {
+                    'result': res
+                }, 200
+    except Exception as e:
+        print(e)
+        return e, 400
+
 @app_routes.route('/storeStarkboardOg', methods=['POST'])
 @require_appkey
 def store_starkboard_og():
@@ -37,7 +67,7 @@ def store_starkboard_og():
                 "error": "Invalid Signature"
             }, 400
         starkboard_db = StarkboardDatabase()
-        insert_res = starkboard_db.inserts_starkboard_og(data)
+        insert_res = starkboard_db.insert_starkboard_og(data)
         if insert_res:
             starkboard_db.close_connection()
             return {
@@ -62,7 +92,7 @@ def store_starkboard_og():
 @require_appkey
 def get_starkboard_og():
     """
-    Stores a wallet OG with its signature
+    Gets an OG signature with its wallet address
     """
     try:
         data = request.get_json()

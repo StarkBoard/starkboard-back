@@ -433,13 +433,29 @@ class StarkboardDatabase():
     # Inserts
     #
 
-    def inserts_starkboard_og(self, data):
+    def insert_starkboard_og(self, data):
         try:
             cursor = self._connection.cursor()
             sql_insert_query = """INSERT INTO starkboard_og(
                     wallet_address, signature
                 ) VALUES (%s,%s)"""
             inserted_block = (data["wallet_address"], data["signature"])
+            cursor.execute(sql_insert_query, inserted_block)
+            self._connection.commit()
+            cursor.close()
+            return True
+        except Exception as e:
+            print(e)
+            self._connection = get_connection()
+            return False
+
+    def insert_newsletter(self, data):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """INSERT IGNORE INTO newsletter(
+                    email_address
+                ) VALUES (%s)"""
+            inserted_block = (data["email_address"])
             cursor.execute(sql_insert_query, inserted_block)
             self._connection.commit()
             cursor.close()
@@ -458,6 +474,20 @@ class StarkboardDatabase():
             cursor = self._connection.cursor()
             sql_insert_query = """SELECT * FROM starkboard_og WHERE wallet_address=%s"""
             inserted_block = (data["wallet_address"])
+            cursor.execute(sql_insert_query, inserted_block)
+            res = cursor.fetchone()
+            self._connection.commit()
+            cursor.close()
+            return res
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_newsletter(self, data):
+        try:
+            cursor = self._connection.cursor()
+            sql_insert_query = """SELECT * FROM newsletter WHERE email_address=%s"""
+            inserted_block = (data["email_address"])
             cursor.execute(sql_insert_query, inserted_block)
             res = cursor.fetchone()
             self._connection.commit()
