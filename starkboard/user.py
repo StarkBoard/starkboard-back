@@ -123,5 +123,4 @@ def whitelist(db, wl_type=0):
         amount
     )
     leaves = list(map(lambda x: x[0], merkle_info))
-    db.close_connection()
     return wallets, leaves
