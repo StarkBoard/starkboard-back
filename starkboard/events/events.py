@@ -11,22 +11,21 @@ def get_events(block_number, starknet_node):
     """
     params = {
         "filter": {
-            "fromBlock": {
+            "from_block": {
                 "block_number": block_number
             }, 
-            "toBlock": {
+            "to_block": {
                 "block_number": block_number
             },
-            "page_size": 1000,
-            "page_number": 0
+            "chunk_size": 1000
         }
     }
     r = starknet_node.post("", method="starknet_getEvents", params=params)
     data = json.loads(r.text)
     data = data["result"]
     events = data["events"]
-    while not data["is_last_page"]:
-        params["filter"]["page_number"] += 1
+    while data.get("continuation_token"):
+        params["filter"]["continuation_token"] = data.get("continuation_token")
         r = starknet_node.post("", method="starknet_getEvents", params=params)
         data = json.loads(r.text)["result"]
         events += data["events"]

@@ -26,7 +26,7 @@ def get_active_wallets_in_block(block_txs=[]):
     """
     Retrieve the number of active wallets in block
     """
-    senders_tx = [tx['contract_address'] for tx in block_txs if tx["type"] == "INVOKE" and len(tx['signature']) > 0]
+    senders_tx = [tx.get('contract_address', tx.get('sender_address')) for tx in block_txs if tx["type"] == "INVOKE" and len(tx['signature']) > 0]
     list_wallets = defaultdict(int)
     for s in senders_tx: list_wallets[s] += 1 
     sorted_list_wallets = {k: v for k, v in sorted(list_wallets.items(), key=lambda item: item[1], reverse=True)}

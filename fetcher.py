@@ -46,6 +46,7 @@ def block_tx_fetcher(block_id, node, db, loop):
     transfer_executed = get_transfer_transactions_in_block(events)
     fees = get_fees_in_block(current_block['transactions'], starknet_node=node)
     active_wallets = get_active_wallets_in_block(current_block['transactions'])
+    print("Here")
     print(f'Fetched Block {current_block["block_number"]} at {datetime.fromtimestamp(current_block["timestamp"])}')
     print(f'> {len(current_block["transactions"])} Txs found in block.')
     print(f'> {wallet_deployed["deployed_wallets"]} User Wallet created in block.')
