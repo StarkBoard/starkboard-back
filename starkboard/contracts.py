@@ -150,6 +150,7 @@ def get_declared_class_in_block(block_txs, node, db):
 
 def get_declared_class(class_hash, node, db):
     prog = get_class_program(class_hash, node)
+    print(prog)
     base64_bytes = prog.encode('utf-8')
     message_bytes = base64.b64decode(base64_bytes)
     json_code = json.loads(gzip.decompress(message_bytes).decode()).get('identifiers')
@@ -256,7 +257,7 @@ def get_class_program(class_hash, starknet_node=None):
     Retrieve the program gzip encoded of a given class
     """
     params = class_hash
-    r = starknet_node.post("", method="starknet_getClass", params=[params])
+    r = starknet_node.post("", method="starknet_getClass", params=["latest", params])
     data = json.loads(r.text)
     if 'error'in data:
         return data['error']
